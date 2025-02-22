@@ -1,15 +1,17 @@
 package enemies;
 
+import skills.IceJavelin;
+import skills.BoneChill;
 import java.util.List;
 
-public class SnowGoblin extends BaseEnemy {
-
+public class SnowGoblin extends Monster {
     public SnowGoblin() {
-        name = "Snow Goblin";
-        hp = 90;
-        atk = 25;
-        def = 12;
-        spd = 55;
-        skills = List.of(new Skill("Ice Javelin"), new Skill("Bone Chill"));
+        super("Snow Goblin", 250, 40, 20, 80);
+        
+        // กำหนดสกิลให้กับ Snow Goblin
+        this.skills = List.of(
+            new IceJavelin(),
+            new BoneChill()
+        );
     }
 }

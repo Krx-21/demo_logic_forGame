@@ -1,15 +1,15 @@
 package enemies;
 
+import skills.SteamJet;
+import skills.GearWeb;
 import java.util.List;
 
-public class SteamSpider extends BaseEnemy {
-
+public class SteamSpider extends Monster {
     public SteamSpider() {
-        name = "Steam Spider";
-        hp = 110;
-        atk = 30;
-        def = 18;
-        spd = 45;
-        skills = List.of(new Skill("Steam Jet"), new Skill("Gear Web"));
+        super("Steam Spider", 110, 30, 18, 45);
+        this.skills = List.of(
+            new SteamJet(),
+            new GearWeb()
+        );
     }
 }

@@ -1,15 +1,15 @@
 package enemies;
 
+import skills.MetalPunch;
+import skills.GearCannon;
 import java.util.List;
 
-public class RustyAutomaton extends BaseEnemy {
-
+public class RustyAutomaton extends Monster {
     public RustyAutomaton() {
-        name = "Rusty Automaton";
-        hp = 120;
-        atk = 35;
-        def = 20;
-        spd = 40;
-        skills = List.of(new Skill("Metal Punch"), new Skill("Overheat Spark"));
+        super("Rusty Automaton", 350, 40, 35, 40);
+        this.skills = List.of(
+            new MetalPunch(),
+            new GearCannon()
+        );
     }
 }

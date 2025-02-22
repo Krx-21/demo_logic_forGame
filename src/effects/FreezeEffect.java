@@ -6,17 +6,14 @@ public class FreezeEffect extends BaseDotEffect {
     public FreezeEffect(int duration) {
         super(0.0f, duration, "Freeze");
     }
-
+    
     @Override
     public void applyEffect(Character target) {
-        System.out.println(target.getName() + " is frozen!");
-        // Logic to apply freeze effect (e.g., reduce speed or skip turns)
-        target.setSpd(target.getSpd() - 10); // Example: reduce speed by 10
+        System.out.println(target.getName() + " is frozen for " + duration + " turns.");
     }
 
     @Override
     public void removeEffect(Character target) {
-        // Logic to remove freeze effect
         target.setSpd(target.getSpd() + 10); // Restore speed
     }
 

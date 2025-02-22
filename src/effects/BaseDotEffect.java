@@ -1,4 +1,5 @@
 package effects;
+
 import characters.Character;
 
 public abstract class BaseDotEffect {

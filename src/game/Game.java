@@ -21,10 +21,13 @@ import skills.Skill;
 import skills.SkillRepository;
 import ui.MainMenu;
 import javafx.application.Platform; // เพิ่มบรรทัดนี้
-
-import java.util.ArrayList;
-import java.util.Collections;
+import player.Player;  // แก้ไข import ให้ถูกต้อง
+import enemies.*;
+import skills.*;
 import java.util.List;
+import java.util.ArrayList;
+
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
 
@@ -115,20 +118,51 @@ public class Game {
         monsterList.clear();
         bossList.clear();
         
-        // เพิ่มศัตรูและบอสตามธีมปัจจุบัน
+        System.out.println("Initializing monsters and bosses for theme: " + currentTheme);
+        
         switch (currentTheme) {
             case FROST:
-                monsterList.add(new IceDrake());
-                monsterList.add(new BatteryMantis());
-                bossList.add(new FrostfangQueen());
+                System.out.println("=== Frost Theme ===");
+                // Boss
+                bossList.add(new FrostfangQueen());  // Boss with ice-based abilities
+                // Monsters
+                monsterList.add(new SnowGoblin());   // Basic ice monster
+                monsterList.add(new FrostWisp());    // Magical ice creature
+                monsterList.add(new IceDrake());     // Dragon-type ice monster
+                monsterList.add(new PolarYeti());    // Strong ice beast
                 break;
+
             case LAVA:
-                // เพิ่ม lava monsters และ bosses
+                System.out.println("=== Lava Theme ===");
+                // Boss
+                bossList.add(new VolcanoBoss());     // Boss with fire-based abilities
+                // Monsters
+                monsterList.add(new FlameImp());     // Quick fire attacker
+                monsterList.add(new LavaSlime());    // Basic lava monster
+                monsterList.add(new MagmaWolf());    // Aggressive fire monster
+                monsterList.add(new IgneousGolem()); // Tanky fire monster
                 break;
+
             case STEAMPUNK:
-                monsterList.add(new BatteryMantis());
-                bossList.add(new ClockworkRequiem());
+                System.out.println("=== Steampunk Theme ===");
+                // Boss
+                bossList.add(new ClockworkRequiem()); // Mechanical boss
+                // Monsters
+                monsterList.add(new RustyAutomaton()); // Basic mechanical monster
+                monsterList.add(new SteamSpider());    // Quick mechanical monster
+                monsterList.add(new MechanicalHound()); // Aggressive mechanical monster
+                monsterList.add(new BatteryMantis());   // Electric-based monster
                 break;
+        }
+
+        // Print current theme monsters and boss
+        System.out.println("\nMonsters in " + currentTheme + " theme:");
+        for (Monster monster : monsterList) {
+            System.out.println("- " + monster.getName());
+        }
+        System.out.println("\nBoss in " + currentTheme + " theme:");
+        for (BaseBoss boss : bossList) {
+            System.out.println("- " + boss.getName());
         }
     }
     
@@ -204,9 +238,8 @@ public class Game {
         int damage = 0;
         boolean useEnemySkill = false;
         
-        // หากระดับความยาก (gameDifficulty) สูง (เช่น HARD หรือ NIGHTMARE) ให้คู่ต่อสู้มีโอกาสใช้สกิลโจมตีแทนพื้นฐาน
+        // หากระดับความยาก (gameDifficulty) สูง ให้คู่ต่อสู้มีโอกาสใช้สกิลโจมตีแทนพื้นฐาน
         if (gameDifficulty == Difficulty.HARD || gameDifficulty == Difficulty.NIGHTMARE) {
-            // logic สำหรับระดับ HARD และ NIGHTMARE
             useEnemySkill = randomGenerator.nextBoolean(); // 50% chance ใช้สกิล
         }
         
@@ -215,18 +248,21 @@ public class Game {
             int index = randomGenerator.nextInt(currentEnemy.getSkills().size());
             Skill enemySkill = currentEnemy.getSkills().get(index);
             System.out.println(currentEnemy.getName() + " uses " + enemySkill.getName() + "!");
-            // ใช้สกิลโจมตีผู้เล่น
             enemySkill.use(currentEnemy, player);
-            // สมมุติว่า enemySkill.use() จะแสดงค่า damage ใน log แล้ว
         } else {
             // ใช้การโจมตีพื้นฐาน
-            if (currentEnemy instanceof IceDrake) {
-                damage = ((IceDrake) currentEnemy).performAttack();
+            if (doesAttackHit(currentEnemy, player)) {  // เพิ่มการเช็ค hit chance
+                if (currentEnemy instanceof IceDrake) {
+                    damage = ((IceDrake) currentEnemy).performAttack();
+                } else {
+                    damage = currentEnemy.getAtk();
+                }
+                System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
+                player.takeDamage(damage);
             } else {
-                damage = currentEnemy.getAtk();
+                System.out.println(currentEnemy.getName() + "'s attack missed the Player!");
+                return;  // ถ้าพลาด ไม่ต้องทำ damage
             }
-            System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
-            player.takeDamage(damage);
         }
         
         // อัปเดตค่า HP ของผู้เล่น และ Label
@@ -307,9 +343,11 @@ public class Game {
     
     // Method คำนวณ hit chance โดยใช้สูตร: attackerAcc / (attackerAcc + defenderSpd)
     private boolean doesAttackHit(Character attacker, Character defender) {
-        double hitChance = (double) attacker.getAccuracy() / (attacker.getAccuracy() + defender.getSpd());
-        System.out.println("HitChance = " + hitChance);
-        return Math.random() < hitChance;
+        if (defender instanceof Player) {
+            // ลดค่า multiplier จาก 0.4 เป็น 0.25 เพื่อให้มอนสเตอร์มีโอกาสโจมตีถูกมากขึ้น
+            return Math.random() * 100 > defender.getSpd() * 0.25;
+        }
+        return Math.random() * 100 > defender.getSpd() * 0.2;
     }
     
     // ตัวอย่างวิธีใช้งานใน attack method
@@ -318,7 +356,7 @@ public class Game {
             int damage = attacker.getAtk() - defender.getDef();
             damage = Math.max(damage, 1);
             defender.takeDamage(damage);
-            System.out.println(attacker.getName() + " attacks and deals " + damage + " damage to " + defender.getName());
+            System.out.println(attacker.getName() + " attacks and deals " + damage + " to " + defender.getName());
         } else {
             System.out.println(attacker.getName() + "'s attack missed " + defender.getName());
         }
@@ -337,5 +375,4 @@ public class Game {
             currentGame.startUserTurn();
         }
     }
-    
 }

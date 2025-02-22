@@ -15,10 +15,6 @@ public class LavaSurge extends Skill {
     
     @Override
     public void use(Character user, Character target) {
-        int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.2)), 1);
-        target.takeDamage(damage);
-        // นำเอฟเฟกต์ที่ส่งผลดาเมจต่อเนื่องไปใช้กับ target
-        target.applyEffect(new LavaSurgeEffect());
-        System.out.println(user.getName() + " casts Lava Surge, dealing an initial " + damage + " damage and applying a continuous lava field!");
+        target.applyEffect(new LavaSurgeEffect(20.0f, 3));  // damage 20, duration 3 turns
     }
 }

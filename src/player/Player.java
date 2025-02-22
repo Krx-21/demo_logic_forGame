@@ -16,8 +16,8 @@ public class Player extends Character {
     private int baseSpd;
     private List<Feather> feathers;
 
-    public Player() {
-        super("Player", 100, 20, 15, 10);
+    public Player(String name) {
+        super(name, 150, 40, 30, 50);  // HP:150, ATK:40, DEF:30, SPD:50
         level = 1;
         currentXP = 0;
         xpToNextLevel = computeXPThreshold(level);

@@ -1,28 +1,17 @@
 package buffs;
 
+import characters.Character;
+
 public class AttackUp extends BaseBuff {
+    private int attackIncrease;
 
-    public AttackUp(int duration) {
-        super("Attack Up", duration);
+    public AttackUp(int duration, int attackIncrease) {
+        super(duration);
+        this.attackIncrease = attackIncrease;
     }
 
     @Override
-    public void applyBuff(characters.Character target) {
-        // Logic to apply attack up buff
-    }
-
-    @Override
-    public void removeBuff(characters.Character target) {
-        // Logic to remove attack up buff
-    }
-
-    @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for attack up buff
-    }
-
-    @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for attack up buff
+    public void apply(characters.Character target) {  // ระบุ package ให้ชัดเจน
+        target.setAttack(target.getAttack() + attackIncrease);
     }
 }

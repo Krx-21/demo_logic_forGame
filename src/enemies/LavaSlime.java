@@ -1,15 +1,11 @@
 package enemies;
 
+import skills.MoltenSplash;
 import java.util.List;
 
-public class LavaSlime extends BaseEnemy {
-
+public class LavaSlime extends Monster {
     public LavaSlime() {
-        name = "Lava Slime";
-        hp = 150;
-        atk = 20;
-        def = 15;
-        spd = 30;
-        skills = List.of(new Skill("Molten Splash"), new Skill("Split"));
+        super("Lava Slime", 300, 40, 25, 30);
+        this.skills = List.of(new MoltenSplash());
     }
 }

@@ -1,22 +1,21 @@
 package enemies;
 
+import skills.FreezingBreath;
+import skills.GlideSlash;
 import java.util.List;
-import skills.Skill;
-import skills.SkillRepository;
 
 public class IceDrake extends Monster {
     public IceDrake() {
-        super("Ice Drake", 200, 45, 25, 50);
-        Skill iceBlast = SkillRepository.getSkill("Ice Blast");
-        if (iceBlast == null) {
-            throw new IllegalStateException("Skill 'Ice Blast' not found! Please register it in SkillRepository.");
-        }
-        this.skills = List.of(iceBlast);
+        // ปรับค่าพารามิเตอร์ (HP, ATK, DEF, SPD) ให้เหมาะสมกับเกมของคุณ
+        super("Ice Drake", 350, 50, 30, 60);
+        this.skills = List.of(
+            new FreezingBreath(),
+            new GlideSlash()
+        );
     }
-    
-    // เมธอด performAttack สำหรับคำนวณดาเมจเฉพาะของ IceDrake
+
     public int performAttack() {
-        // ตัวอย่าง: return ค่า atk + bonus จาก Ice Blast
-        return getAtk(); 
+        // ใส่ตรรกะการคำนวณความเสียหายที่ต้องการ
+        return 0; // เปลี่ยนเป็นค่าความเสียหายที่คำนวณได้
     }
 }

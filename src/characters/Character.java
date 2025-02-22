@@ -19,11 +19,13 @@ public class Character {
     protected int atk;
     protected int def;
     protected int spd;
-    protected int accuracy;
+    protected int accuracy = 100; // เพิ่มค่าเริ่มต้น accuracy
     protected List<Skill> skills;
     protected List<BaseDotEffect> dotEffects;
     protected List<BaseBuff> buffs;
     protected List<BaseDebuff> debuffs;
+    private int attack;
+    private int speed;
 
     public Character(String name, int hp, int atk, int def, int spd, int accuracy) {
         this.name = name;
@@ -55,6 +57,9 @@ public class Character {
     public String getName() { return name; }
     public int getAtk() { return atk; }
     public int getDef() { return def; }
+    public void setDef(int def) {
+        this.def = def;
+    }
     public int getSpd() { return spd; }
     public int getAccuracy() { return accuracy; }
     public void setAccuracy(int accuracy) { this.accuracy = accuracy; }
@@ -67,13 +72,11 @@ public class Character {
     
     // ใช้ method applyEffect เพียงตัวเดียวสำหรับทุก BaseDotEffect
     public void applyEffect(BaseDotEffect effect) {
-        dotEffects.add(effect);
-        effect.applyEffect(this);
+        effect.applyEffect(this);  // เปลี่ยนจาก apply เป็น applyEffect
     }
     
     public void addBuff(BaseBuff buff) {
-        buffs.add(buff);
-        buff.apply(this);
+        buff.apply(this);  // this เป็น Character อยู่แล้ว
     }
     
     public void addDebuff(BaseDebuff debuff) {
@@ -90,5 +93,13 @@ public class Character {
     public void increaseDef(int amount) {
         this.def += amount;
         System.out.println(name + "'s DEF increases by " + amount + ".");
+    }
+
+    public int getAttack() {
+        return attack;
+    }
+
+    public void setAttack(int attack) {
+        this.attack = attack;
     }
 }

@@ -3,20 +3,23 @@ package effects;
 import characters.Character;
 
 public class DefenseDownEffect extends BaseDotEffect {
-    public DefenseDownEffect(int duration) {
+    private int defenseReduction;
+    
+    public DefenseDownEffect(int duration, int defenseReduction) {
         super(0.0f, duration, "Defense Down");
+        this.defenseReduction = defenseReduction;
     }
     
     @Override
     public void applyEffect(Character target) {
-        target.setDef(target.getDef() - 10);
-        System.out.println(target.getName() + "'s defense has been lowered.");
+        target.setDef(target.getDef() - defenseReduction);
+        System.out.println(target.getName() + "'s defense decreased by " + defenseReduction + "!");
     }
     
     @Override
     public void removeEffect(Character target) {
-        target.setDef(target.getDef() + 10);
-        System.out.println("Defense Down effect removed from " + target.getName());
+        target.setDef(target.getDef() + defenseReduction);
+        System.out.println(target.getName() + "'s defense returns to normal.");
     }
     
     @Override

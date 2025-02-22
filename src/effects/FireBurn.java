@@ -3,26 +3,26 @@ package effects;
 import characters.Character;
 
 public class FireBurn extends BaseDotEffect {
-    private float burnRate;
+    private float damage;
     
-    public FireBurn(float burnRate, int duration) {
-        super(burnRate, duration, "Fire Burn");
-        this.burnRate = burnRate;
+    public FireBurn(float damage, int duration) {
+        super(damage, duration, "Fire Burn");
+        this.damage = damage;
     }
     
     @Override
     public void applyEffect(Character target) {
-        // ตัวอย่าง: ลด HP ทีละนิดใน tick หรือเพิ่มเอฟเฟกต์ burning อื่น ๆ
-        System.out.println(target.getName() + " is burning with a rate of " + burnRate);
-    }
-    
-    @Override
-    public void removeEffect(Character target) {
-        // กำจัดเอฟเฟกต์ burning เมื่อหมด duration
+        System.out.println(target.getName() + " is burning!");
     }
     
     @Override
     public void tickEffect(Character target) {
-        // ดำเนินการ effect ทีละ tick
+        target.takeDamage((int)damage);
+        System.out.println(target.getName() + " takes " + damage + " burn damage!");
+    }
+    
+    @Override
+    public void removeEffect(Character target) {
+        System.out.println("Fire burn effect wears off from " + target.getName());
     }
 }

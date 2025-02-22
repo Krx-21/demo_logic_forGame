@@ -3,16 +3,17 @@ package effects;
 import characters.Character;
 
 public class LavaSurgeEffect extends BaseDotEffect {
-    private int turnCount = 0;
+    private float damage;
     
-    // ในที่นี้เราจะให้ effect นี้มีอายุยาวมาก จนกว่าจะถูกลบออกด้วยไอเทมหรือสกิลบางอย่าง
-    public LavaSurgeEffect() {
-        super(0.0f, 9999, "Lava Surge");
+    public LavaSurgeEffect(float damage, int duration) {
+        super(damage, duration, "Lava Surge");
+        this.damage = damage;
     }
     
     @Override
     public void applyEffect(Character target) {
-        System.out.println(target.getName() + " is engulfed by a continuous lava flow!");
+        target.takeDamage((int)damage);
+        System.out.println(target.getName() + " is burned by lava surge for " + damage + " damage!");
     }
     
     @Override
@@ -22,10 +23,6 @@ public class LavaSurgeEffect extends BaseDotEffect {
     
     @Override
     public void tickEffect(Character target) {
-        // ทุกเทิร์นให้ทำดาเมจต่อเนื่อง ตัวอย่าง 10 ดาเมจต่อเทิร์น
-        int damage = 10;
-        target.takeDamage(damage);
-        System.out.println(target.getName() + " takes " + damage + " lava damage due to Lava Surge.");
-        turnCount++;
+        System.out.println(target.getName() + " continues to burn from the lava!");
     }
 }

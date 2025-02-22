@@ -5,9 +5,9 @@ import java.util.List;
 import skills.Skill;
 
 public class Monster extends Character {
-    // Constructor ที่ไม่รับ List<Skill>
     public Monster(String name, int hp, int atk, int def, int spd) {
-        super(name, hp, atk, def, spd);
+        // ลดค่า ATK ของมอนสเตอร์ลง 20%
+        super(name, hp, (int)(atk * 0.8), def, spd);
     }
     
     // Constructor ที่รับ List<Skill>

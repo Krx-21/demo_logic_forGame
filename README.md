@@ -33,4 +33,35 @@ Every journey is different, as the world changes each time you venture forth. Th
 
 ## Contributing
 สามารถ Fork โปรเจกต์หรือเปิด Pull Request เพื่อมีส่วนร่วมในการพัฒนาได้
->>>>>>> 74dd02a (0.0.1)
+
+# Demo Logic for Game
+
+## Version History
+
+### v0.0.2 (Current)
+**New Features:**
+- Added themed monster system with 3 themes:
+  - 🧊 **Frost Theme**
+    - Boss: Frostfang Queen
+    - Monsters: Snow Goblin, Frost Wisp, Ice Drake, Polar Yeti
+  - 🔥 **Lava Theme**
+    - Boss: Volcano Boss
+    - Monsters: Flame Imp, Lava Slime, Magma Wolf, Igneous Golem
+  - ⚙️ **Steampunk Theme**
+    - Boss: Clockwork Requiem
+    - Monsters: Rusty Automaton, Steam Spider, Mechanical Hound, Battery Mantis
+
+- Implemented comprehensive effect system:
+  - Status effects (DOT, buffs, debuffs)
+  - Effect duration and stacking
+  - Effect removal system
+
+- Enhanced combat mechanics:
+  - Added hit chance calculation
+  - Implemented damage calculation considering defense
+  - Added critical hit system
+
+## Requirements
+- Java 17 or higher
+- JavaFX SDK 23.0.2
+- Windows OS

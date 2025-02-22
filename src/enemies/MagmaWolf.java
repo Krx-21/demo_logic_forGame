@@ -1,15 +1,15 @@
 package enemies;
 
+import skills.InfernoFang;
+import skills.HowlOfEmbers;
 import java.util.List;
 
-public class MagmaWolf extends BaseEnemy {
-
+public class MagmaWolf extends Monster {
     public MagmaWolf() {
-        name = "Magma Wolf";
-        hp = 180;
-        atk = 40;
-        def = 20;
-        spd = 60;
-        skills = List.of(new Skill("Inferno Fang"), new Skill("Howl of Embers"));
+        super("Magma Wolf", 450, 55, 35, 80);
+        this.skills = List.of(
+            new InfernoFang(),
+            new HowlOfEmbers()
+        );
     }
 }
