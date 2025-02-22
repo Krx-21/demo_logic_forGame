@@ -1,6 +1,46 @@
 # Song of Twelve Feathers
 
-**Version 0.0.1**
+**Version 0.0.2a (Current)**
+
+## Version History
+
+### v0.0.2a (Latest)
+**New Features & Improvements:**
+- Enhanced Player Character:
+  - Increased base stats (HP: 500, ATK: 70, DEF: 45, SPD: 80)
+  - Improved stat growth per level
+  - Added 6 unique skills:
+    - Basic Slash (No cost, No cooldown)
+    - Power Strike (200% ATK damage)
+    - Flaming Blade (180% ATK + Burn effect)
+    - Defensive Stance (Increases DEF)
+    - Whirlwind Slash (250% ATK damage)
+    - Arcane Slash (200% ATK, 50% defense penetration)
+
+- Improved Combat UI:
+  - Redesigned battle interface
+  - Dynamic skill selection system
+  - Added tooltips showing skill details
+  - Improved victory notifications
+  - Added XP gain display
+  - Direct battle start after difficulty selection
+
+- Enhanced Battle Mechanics:
+  - Added speed-based turn order
+  - Implemented random initiative for equal speeds
+  - Increased skill damage scaling
+  - Added proper effect system integration
+
+### v0.0.2
+- Added themed monster system (Frost, Lava, Steampunk)
+- Implemented status effects system
+- Enhanced combat mechanics with hit chance and critical hits
+
+### v0.0.1 (Initial Release)
+- Basic game concept and structure
+- Initial combat system implementation
+- Basic character creation
+- Preliminary UI elements
 
 ## Overview
 **Song of Twelve Feathers** is an immersive roguelite adventure game set in a fantasy world filled with magic, mystery, and epic battles. The game revolves around the legend of the "Twelve Sacred Feathers," scattered across different lands. Whoever collects all twelve feathers will gain the power to control time and unlock the secrets of the world's creation and destruction.
@@ -36,32 +76,26 @@ Every journey is different, as the world changes each time you venture forth. Th
 
 # Demo Logic for Game
 
-## Version History
+## Current Features
+- Character progression system
+- Turn-based combat
+- Themed monsters and bosses
+- Status effects system
+- Skill system with cooldowns
+- Victory/Defeat conditions
 
-### v0.0.2 (Current)
-**New Features:**
-- Added themed monster system with 3 themes:
-  - 🧊 **Frost Theme**
-    - Boss: Frostfang Queen
-    - Monsters: Snow Goblin, Frost Wisp, Ice Drake, Polar Yeti
-  - 🔥 **Lava Theme**
-    - Boss: Volcano Boss
-    - Monsters: Flame Imp, Lava Slime, Magma Wolf, Igneous Golem
-  - ⚙️ **Steampunk Theme**
-    - Boss: Clockwork Requiem
-    - Monsters: Rusty Automaton, Steam Spider, Mechanical Hound, Battery Mantis
-
-- Implemented comprehensive effect system:
-  - Status effects (DOT, buffs, debuffs)
-  - Effect duration and stacking
-  - Effect removal system
-
-- Enhanced combat mechanics:
-  - Added hit chance calculation
-  - Implemented damage calculation considering defense
-  - Added critical hit system
+## Planned Features
+- [ ] Item system implementation
+- [ ] More monster themes
+- [ ] Advanced AI behaviors
+- [ ] Save/Load system
+- [ ] Character customization
 
 ## Requirements
 - Java 17 or higher
 - JavaFX SDK 23.0.2
 - Windows OS
+
+## How to Run
+```bash
+

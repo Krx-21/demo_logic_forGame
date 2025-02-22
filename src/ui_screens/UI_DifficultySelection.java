@@ -18,8 +18,10 @@ import game.Game;
 public class UI_DifficultySelection extends VBox {
 
     private final Scene scene;
+    private Stage stage;
 
     public UI_DifficultySelection(Stage stage) {
+        this.stage = stage;
         // สร้างปุ่มสำหรับเลือกความยาก
         Button easyButton = createStyledButton("Easy");
         Button mediumButton = createStyledButton("Medium");
@@ -67,5 +69,10 @@ public class UI_DifficultySelection extends VBox {
         Button button = new Button(text);
         button.setStyle("-fx-font-size: 24px; -fx-pref-width: 250px; -fx-pref-height: 60px; -fx-text-fill: #FFFFFF; -fx-background-color: #001f3f;");
         return button;
+    }
+
+    private void handleDifficultySelection(Difficulty difficulty) {
+        Game game = new Game(stage, difficulty);
+        stage.setScene(game.getGameScene());
     }
 }

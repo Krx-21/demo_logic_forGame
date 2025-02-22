@@ -30,6 +30,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import player.Player;
+import game.DifficultyManager;
+import javafx.stage.Modality; // เพิ่มบรรทัดนี้
+import javafx.stage.Stage;
+import javafx.stage.Modality;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Tooltip;
+import javafx.event.EventHandler;
+import javafx.event.ActionEvent;
 
 public class Game {
     // สมมุติว่าเรามี instance ของ Game ที่ใช้ในระบบ turn
@@ -49,13 +64,17 @@ public class Game {
     private Label playerHPLabel;
     private Label monsterHPLabel;
     private Label enemyNameLabel; // Label for displaying enemy name
-    private Character player;
+    private Player player;  // เปลี่ยนจาก Character เป็น Player
     private Character currentEnemy;
+    private DifficultyManager difficultyManager;  // เพิ่มตัวแปร
+    private HBox mainButtonBox;
+    private HBox skillButtonBox;
     
     public Game(Stage stage, Difficulty difficulty) {
-        currentGame = this;
         this.gameStage = stage;
         this.gameDifficulty = difficulty;
+        gameStage.setResizable(false); // ไม่ให้ปรับขนาดหน้าต่างได้
+        currentGame = this;
         this.themeList = new ArrayList<>();
         this.monsterList = new ArrayList<>();
         this.bossList = new ArrayList<>();
@@ -65,7 +84,8 @@ public class Game {
         this.monsterHP = 0; // Initial monster HP
         
         // ใน constructor ของ Game.java
-        player = new Character("Adventurer", 100, 30, 20, 60, 80);
+        player = new Player("Adventurer");  // สร้าง Player แทน Character
+        this.difficultyManager = new DifficultyManager(difficulty);
         
         initializeThemes();
         initializeMonstersAndBosses();
@@ -105,7 +125,117 @@ public class Game {
     }
     
     public Scene getGameScene() {
-        return gameScene;
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(20));
+        root.setStyle("-fx-background-color: #2c3e50;");
+
+        // แสดงสถานะ
+        playerHPLabel = new Label("Player HP: " + player.getHp());
+        monsterHPLabel = new Label("Monster HP: ---");
+        enemyNameLabel = new Label("Enemy: ---");
+
+        // สไตล์ Label
+        String labelStyle = "-fx-font-size: 24px; -fx-text-fill: white;";
+        playerHPLabel.setStyle(labelStyle);
+        monsterHPLabel.setStyle(labelStyle);
+        enemyNameLabel.setStyle(labelStyle + "-fx-font-weight: bold;");
+
+        // ปุ่มควบคุม
+        mainButtonBox = new HBox(20);
+        mainButtonBox.setAlignment(Pos.CENTER);
+        Button skillButton = createStyledButton("Use Skill", e -> showSkillButtons());
+        Button itemButton = createStyledButton("Use Item", e -> useItem());
+        mainButtonBox.getChildren().addAll(skillButton, itemButton);
+
+        // Skill buttons (initially hidden)
+        skillButtonBox = createSkillButtons();
+        skillButtonBox.setVisible(false);
+        skillButtonBox.setManaged(false);
+
+        // Add all components
+        root.getChildren().addAll(
+            playerHPLabel, 
+            monsterHPLabel, 
+            enemyNameLabel, 
+            mainButtonBox,
+            skillButtonBox
+        );
+
+        fight();
+
+        return new Scene(root, 1280, 720); // ปรับขนาดเป็น 1280x720
+    }
+
+    private Button createStyledButton(String text, EventHandler<ActionEvent> handler) {
+        Button button = new Button(text);
+        button.setPrefWidth(200);
+        button.setPrefHeight(50);
+        button.setStyle(
+            "-fx-font-size: 18px; " +
+            "-fx-background-color: #34495e; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 10px; " +
+            "-fx-border-color: #455a64; " +
+            "-fx-border-width: 2px;"
+        );
+        
+        button.setOnMouseEntered(e -> 
+            button.setStyle(button.getStyle() + "-fx-background-color: #455a64;"));
+        
+        button.setOnMouseExited(e -> 
+            button.setStyle(button.getStyle() + "-fx-background-color: #34495e;"));
+        
+        button.setOnAction(handler);
+        return button;
+    }
+    
+    private HBox createSkillButtons() {
+        HBox skillButtonBox = new HBox(10);
+        skillButtonBox.setAlignment(Pos.CENTER);
+        
+        if (player instanceof Player) {
+            Player playerChar = (Player) player;
+            List<Skill> playerSkills = playerChar.getSkills();
+            
+            for (Skill skill : playerSkills) {
+                Button skillButton = createStyledButton(skill.getName(), e -> {
+                    useSkill(skill.getName());
+                    showMainButtons();
+                });
+                
+                // Add tooltip for skill info
+                Tooltip tooltip = new Tooltip(
+                    skill.getDescription() + "\n" +
+                    "Mana Cost: " + skill.getManaCost() + "\n" +
+                    "Cooldown: " + skill.getCooldown() + " turns"
+                );
+                skillButton.setTooltip(tooltip);
+                
+                skillButtonBox.getChildren().add(skillButton);
+            }
+        }
+        
+        // Back button
+        Button backButton = createStyledButton("Back", e -> showMainButtons());
+        backButton.setStyle(backButton.getStyle() + "-fx-background-color: #c0392b;");
+        skillButtonBox.getChildren().add(backButton);
+        
+        return skillButtonBox;
+    }
+
+    private void showSkillButtons() {
+        mainButtonBox.setVisible(false);
+        mainButtonBox.setManaged(false);
+        skillButtonBox.setVisible(true);
+        skillButtonBox.setManaged(true);
+    }
+
+    private void showMainButtons() {
+        skillButtonBox.setVisible(false);
+        skillButtonBox.setManaged(false);
+        mainButtonBox.setVisible(true);
+        mainButtonBox.setManaged(true);
     }
     
     private void initializeThemes() {
@@ -167,57 +297,31 @@ public class Game {
     }
     
     private void fight() {
-        if (monsterList.isEmpty() && bossList.isEmpty()) {
-            roundsCompleted++;
-            if (roundsCompleted >= 12) {
-                System.out.println("Game completed! You have defeated all themes.");
-                return;
-            }
-            if (themeList.isEmpty()) {
-                System.out.println("All themes completed! Reshuffling themes...");
-                initializeThemes();
-            }
-            currentTheme = themeList.remove(0);
-            initializeMonstersAndBosses();
-        }
+        // เลือกมอนสเตอร์แบบสุ่ม
+        Random random = new Random();
+        currentEnemy = monsterList.get(random.nextInt(monsterList.size()));
+        monsterHP = currentEnemy.getHp();
         
-        if (!monsterList.isEmpty()) {
-            Monster monster = monsterList.remove(0);
-            monsterHP = monster.getHp(); // Set initial monster HP
-            monsterHPLabel.setText("Monster HP: " + monsterHP);
-            System.out.println("Fighting " + monster.getName());
-            currentEnemy = monster;
-        } else if (!bossList.isEmpty()) {
-            BaseBoss boss = bossList.remove(0);
-            monsterHP = boss.getHp(); // Set initial boss HP
-            monsterHPLabel.setText("Monster HP: " + monsterHP);
-            System.out.println("Fighting " + boss.getName());
-            currentEnemy = boss;
-        }
+        // แสดงชื่อและ HP ของมอนสเตอร์
+        enemyNameLabel.setText("Enemy: " + currentEnemy.getName());
+        monsterHPLabel.setText("Monster HP: " + monsterHP);
+        playerHPLabel.setText("Player HP: " + player.getHp());
         
-        // แสดงชื่อ enemy ด้วย Label ที่มีฟ้อนต์ใหญ่
-        enemyNameLabel.setText("Fighting: " + currentEnemy.getName());
-        
-        // ตรวจสอบลำดับการโจมตีโดยพิจารณาจาก spd และอย่าเรียก playerAttack() อัตโนมัติเมื่อผู้เล่นโจมตีก่อน
+        // เช็ค Speed เพื่อกำหนดใครเริ่มก่อน
         if (player.getSpd() > currentEnemy.getSpd()) {
-            System.out.println("Player attacks first. Please select a skill to use.");
-            // รอการเลือกสกิลจากผู้เล่น โดยที่ event handler ของปุ่ม Use Skill จะเป็นตัวเรียก playerAttack()
+            System.out.println("Player is faster! Player goes first.");
+            // ผู้เล่นเริ่มก่อน (ไม่ต้องทำอะไรเพราะปุ่มควบคุมพร้อมใช้งานอยู่แล้ว)
         } else if (player.getSpd() < currentEnemy.getSpd()) {
-            System.out.println("Enemy attacks first.");
-            enemyAttack();
-            if (player.getHp() > 0) {
-                System.out.println("Now, it's player's turn. Please select a skill to use.");
-            }
+            System.out.println("Enemy is faster! Enemy goes first.");
+            enemyAttack();  // ศัตรูโจมตีก่อน
         } else {
-            // กรณี spd เท่ากัน ให้สุ่มเลือกฝ่ายที่โจมตีก่อน
-            if (randomGenerator.nextBoolean()) {
-                System.out.println("Player attacks first (tie-break). Please select a skill to use.");
+            // ถ้า Speed เท่ากัน สุ่มว่าใครจะได้เริ่มก่อน
+            if (random.nextBoolean()) {
+                System.out.println("Equal speed! Random decided player goes first.");
+                // ผู้เล่นเริ่มก่อน
             } else {
-                System.out.println("Enemy attacks first (tie-break).");
-                enemyAttack();
-                if (player.getHp() > 0) {
-                    System.out.println("Now, it's player's turn. Please select a skill to use.");
-                }
+                System.out.println("Equal speed! Random decided enemy goes first.");
+                enemyAttack();  // ศัตรูโจมตีก่อน
             }
         }
     }
@@ -233,95 +337,171 @@ public class Game {
     }
     
     private void enemyAttack() {
-        System.out.println("Enemy's turn: " + currentEnemy.getName() + " is attacking!");
+        System.out.println("\nEnemy's turn!");
         
-        int damage = 0;
-        boolean useEnemySkill = false;
-        
-        // หากระดับความยาก (gameDifficulty) สูง ให้คู่ต่อสู้มีโอกาสใช้สกิลโจมตีแทนพื้นฐาน
-        if (gameDifficulty == Difficulty.HARD || gameDifficulty == Difficulty.NIGHTMARE) {
-            useEnemySkill = randomGenerator.nextBoolean(); // 50% chance ใช้สกิล
-        }
-        
-        if (useEnemySkill && currentEnemy.getSkills() != null && !currentEnemy.getSkills().isEmpty()) {
-            // เลือกสกิลแบบสุ่ม
-            int index = randomGenerator.nextInt(currentEnemy.getSkills().size());
-            Skill enemySkill = currentEnemy.getSkills().get(index);
-            System.out.println(currentEnemy.getName() + " uses " + enemySkill.getName() + "!");
-            enemySkill.use(currentEnemy, player);
+        List<Skill> enemySkills = currentEnemy.getSkills();
+        if (enemySkills != null && !enemySkills.isEmpty()) {
+            Random randomGenerator = new Random();
+            int index = randomGenerator.nextInt(enemySkills.size());
+            Skill chosenSkill = enemySkills.get(index);
+            
+            System.out.println(currentEnemy.getName() + " uses " + chosenSkill.getName() + "!");
+            chosenSkill.use(currentEnemy, player);
+            
+            playerHPLabel.setText("Player HP: " + player.getHp());
         } else {
-            // ใช้การโจมตีพื้นฐาน
-            if (doesAttackHit(currentEnemy, player)) {  // เพิ่มการเช็ค hit chance
-                if (currentEnemy instanceof IceDrake) {
-                    damage = ((IceDrake) currentEnemy).performAttack();
-                } else {
-                    damage = currentEnemy.getAtk();
-                }
-                System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
+            if (doesAttackHit(currentEnemy, player)) {
+                int damage = Math.max(currentEnemy.getAtk() - player.getDef(), 1);
                 player.takeDamage(damage);
+                System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
+                playerHPLabel.setText("Player HP: " + player.getHp());
             } else {
                 System.out.println(currentEnemy.getName() + "'s attack missed the Player!");
-                return;  // ถ้าพลาด ไม่ต้องทำ damage
             }
         }
-        
-        // อัปเดตค่า HP ของผู้เล่น และ Label
-        playerHP = player.getHp();
-        playerHPLabel.setText("Player HP: " + playerHP);
-        
-        // ตัวอย่างปรับ Status เสริมจากคู่ต่อสู้ในระดับความยากสูง (เช่น บังคับให้เกิด Burn effect)
-        if (gameDifficulty == Difficulty.HARD || gameDifficulty == Difficulty.NIGHTMARE) {
-            System.out.println(currentEnemy.getName() + " inflicts additional Burn effect on the Player due to high difficulty.");
-            // ใช้สกิลหรือเอฟเฟกต์ Burn โดยปรับค่าสำหรับระดับความยากนี้
-            player.applyEffect(new effects.FireBurn(2.0f, 2));
-        }
-        
-        if (playerHP <= 0) {
-            System.out.println("Game Over! Returning to Main Menu...");
-            MainMenu mainMenu = new MainMenu(gameStage);
-            gameStage.setScene(mainMenu.getScene());
+
+        if (player.getHp() <= 0) {
+            Alert gameOverAlert = new Alert(Alert.AlertType.INFORMATION);
+            gameOverAlert.setTitle("Game Over");
+            gameOverAlert.setHeaderText("You have been defeated!");
+            gameOverAlert.setContentText("Better luck next time!");
+            
+            gameOverAlert.showAndWait().ifPresent(response -> {
+                // กลับไปยังหน้าเมนูหลัก
+                MainMenu mainMenu = new MainMenu(gameStage);
+                gameStage.setScene(mainMenu.getCustomScene());
+            });
+        } else {
+            System.out.println("Enemy turn complete. Now player's turn.");
         }
     }
     
     private void showSkillDialog() {
-        // สร้างรายชื่อสกิลจาก SkillRepository โดยใช้ explicit loop เพราะ getAllSkillNames() คืน Iterable<String>
-        List<String> skillNames = new ArrayList<>();
-        for (String skill : SkillRepository.getAllSkillNames()) {
-            skillNames.add(skill);
+        Stage skillStage = new Stage();
+        skillStage.initModality(Modality.APPLICATION_MODAL);
+        skillStage.setTitle("Choose Skill");
+
+        // ตั้งค่าขนาดหน้าต่างสกิล
+        skillStage.setWidth(800);
+        skillStage.setHeight(600);
+        skillStage.setResizable(false);
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-background-color: #2c3e50;");
+
+        // สร้างปุ่มสกิลทั้ง 6 สกิล
+        if (player instanceof Player) {
+            Player playerChar = (Player) player;
+            List<Skill> playerSkills = playerChar.getSkills();
+            
+            for (Skill skill : playerSkills) {
+                Button skillButton = new Button(skill.getName());
+                skillButton.setPrefWidth(300);
+                skillButton.setPrefHeight(50);
+                
+                // สร้าง tooltip แสดงรายละเอียดสกิล
+                Tooltip tooltip = new Tooltip(
+                    skill.getDescription() + "\n" +
+                    "Mana Cost: " + skill.getManaCost() + "\n" +
+                    "Cooldown: " + skill.getCooldown() + " turns"
+                );
+                skillButton.setTooltip(tooltip);
+                
+                // สไตล์ปุ่มสกิล
+                skillButton.setStyle(
+                    "-fx-font-size: 16px; " +
+                    "-fx-background-color: #34495e; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-padding: 10px; " +
+                    "-fx-border-color: #455a64; " +
+                    "-fx-border-width: 2px;"
+                );
+                
+                // เมื่อเมาส์ชี้
+                skillButton.setOnMouseEntered(e -> 
+                    skillButton.setStyle(skillButton.getStyle() + "-fx-background-color: #455a64;"));
+                
+                // เมื่อเมาส์ออก
+                skillButton.setOnMouseExited(e -> 
+                    skillButton.setStyle(skillButton.getStyle() + "-fx-background-color: #34495e;"));
+                
+                skillButton.setOnAction(e -> {
+                    useSkill(skill.getName());
+                    skillStage.close();
+                });
+                
+                layout.getChildren().add(skillButton);
+            }
         }
+
+        // ปุ่มย้อนกลับ
+        Button backButton = new Button("Back");
+        backButton.setPrefWidth(300);
+        backButton.setPrefHeight(50);
+        backButton.setStyle(
+            "-fx-font-size: 16px; " +
+            "-fx-background-color: #c0392b; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 10px; " +
+            "-fx-border-color: #922b21; " +
+            "-fx-border-width: 2px;"
+        );
         
-        // สร้าง ChoiceDialog โดยกำหนดค่า default เป็นสกิลตัวแรก
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(skillNames.get(0), skillNames);
-        dialog.setTitle("Choose Skill");
-        dialog.setHeaderText("Select a skill to use:");
+        backButton.setOnMouseEntered(e -> 
+            backButton.setStyle(backButton.getStyle() + "-fx-background-color: #922b21;"));
         
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(this::useSkill);
+        backButton.setOnMouseExited(e -> 
+            backButton.setStyle(backButton.getStyle() + "-fx-background-color: #c0392b;"));
+        
+        backButton.setOnAction(e -> skillStage.close());
+        layout.getChildren().add(backButton);
+
+        Scene scene = new Scene(layout);
+        skillStage.setScene(scene);
+        skillStage.showAndWait();
     }
     
     private void useSkill(String skillName) {
-        Skill skill = SkillRepository.getSkill(skillName);
-        if (skill != null) {
-            System.out.println("Using skill: " + skill.getName());
+        if (player instanceof Player) {
+            Player playerChar = (Player) player;
+            List<Skill> playerSkills = playerChar.getSkills();
             
-            // บันทึกค่า HP ของผู้ถูกโจมตีก่อนใช้สกิล
-            int enemyHpBefore = currentEnemy.getHp();
-            // ใช้สกิลโจมตี
-            skill.use(player, currentEnemy);
-            // อัปเดตค่า HP ของศัตรูหลังโจมตี และคำนวณดาเมจที่ทำได้
-            int enemyHpAfter = currentEnemy.getHp();
-            int damageDone = enemyHpBefore - enemyHpAfter;
-            System.out.println("Player deals " + damageDone + " damage to " + currentEnemy.getName());
-            
-            monsterHP = enemyHpAfter;
-            monsterHPLabel.setText("Monster HP: " + monsterHP);
+            // หาสกิลที่เลือกจากรายการสกิลของผู้เล่น
+            Skill selectedSkill = playerSkills.stream()
+                .filter(skill -> skill.getName().equals(skillName))
+                .findFirst()
+                .orElse(null);
+                
+            if (selectedSkill != null) {
+                System.out.println("Using skill: " + selectedSkill.getName());
+                
+                // บันทึกค่า HP ของศัตรูก่อนใช้สกิล
+                int enemyHpBefore = currentEnemy.getHp();
+                
+                // ใช้สกิล
+                selectedSkill.use(player, currentEnemy);
+                
+                // อัพเดต HP ของศัตรู
+                int enemyHpAfter = currentEnemy.getHp();
+                int damageDone = enemyHpBefore - enemyHpAfter;
+                
+                System.out.println("Player deals " + damageDone + " damage to " + currentEnemy.getName());
+                
+                monsterHP = enemyHpAfter;
+                monsterHPLabel.setText("Monster HP: " + monsterHP);
 
-            if (monsterHP <= 0) {
-                System.out.println("Enemy defeated!");
-                fight();  // เริ่มรอบใหม่
-            } else {
-                System.out.println("Player turn complete. Now enemy's turn.");
-                enemyAttack();
+                if (monsterHP <= 0) {
+                    System.out.println("Enemy defeated!");
+                    if (currentEnemy instanceof Monster) {
+                        showVictoryAlert((Monster) currentEnemy);
+                    }
+                    fight();  // เริ่มรอบใหม่
+                } else {
+                    System.out.println("Player turn complete. Now enemy's turn.");
+                    enemyAttack();
+                }
             }
         }
     }
@@ -374,5 +554,50 @@ public class Game {
         if (currentGame != null) {
             currentGame.startUserTurn();
         }
+    }
+
+    private void showVictoryAlert(Monster defeatedEnemy) {
+        Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
+        victoryAlert.setTitle("Victory!");
+        victoryAlert.setHeaderText("Enemy Defeated!");
+        
+        // Calculate XP gained based on enemy stats and difficulty
+        int xpGained = calculateXPGained(defeatedEnemy);
+        player.addXP(xpGained);
+        
+        StringBuilder message = new StringBuilder();
+        message.append("You have defeated ").append(defeatedEnemy.getName()).append("!\n");
+        message.append("XP Gained: ").append(xpGained).append("\n");
+        message.append("Current Level: ").append(player.getLevel()).append("\n");
+        message.append("XP: ").append(player.getCurrentXP()).append("/").append(player.getXPToNextLevel());
+        
+        if (bossList.stream().anyMatch(boss -> boss.getName().equals(defeatedEnemy.getName()))) {
+            message.append("\nCongratulations on defeating the boss!");
+            message.append("\nYou've cleared this theme!");
+        }
+        
+        victoryAlert.setContentText(message.toString());
+        victoryAlert.showAndWait();
+    }
+
+    private int calculateXPGained(Monster defeatedEnemy) {
+        // Base XP calculation based on enemy stats
+        int baseXP = (defeatedEnemy.getHp() / 10) + 
+                     (defeatedEnemy.getAtk() * 2) + 
+                     (defeatedEnemy.getDef() * 2) + 
+                     (defeatedEnemy.getSpd());
+                     
+        // Bonus XP for boss
+        if (bossList.stream().anyMatch(boss -> boss.getName().equals(defeatedEnemy.getName()))) {
+            baseXP *= 2;
+        }
+        
+        // Apply difficulty multiplier
+        return (int)(baseXP * difficultyManager.getExpMultiplier());
+    }
+    
+    public List<Skill> getSkills() {
+        // แทนที่จะส่งคืน this.skills ให้ส่งคืนสกิลจาก player แทน
+        return player.getSkills();
     }
 }
