@@ -8,19 +8,17 @@ public class EarthQuake extends Skill {
     private int baseDamage;
     
     public EarthQuake() {
-        super("Earth Quake", 0, 30, "Deals earth damage based on user's Atk and lowers target's defense.");
-        // กำหนดค่าพารามิเตอร์สำหรับสูตร
+        // manaCost = 30, cooldown = 0
+        super("Earth Quake", 30, 0, "Deals earth damage based on user's Atk and lowers target's defense.");
         this.baseDamage = 40;
         this.multiplier = 1.2;
     }
     
     @Override
     public void use(Character user, Character target) {
-        // สูตรคำนวณ: damage = max( baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.30), 1 )
         int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.30)), 1);
         target.takeDamage(damage);
-        // ใช้เอฟเฟกต์ลดค่า def เป็นเวลา 3 เทิร์น
-        target.applyEffect(new DefenseDownEffect(3));
+        target.applyEffect(new DefenseDownEffect(3)); // ลดค่า def ของ target เป็นเวลา 3 เทิร์น
         System.out.println(user.getName() + " uses " + getName() + " dealing " + damage + " damage.");
     }
 }

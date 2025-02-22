@@ -3,15 +3,13 @@ package effects;
 import characters.Character;
 
 public class FreezeEffect extends BaseDotEffect {
-    private int duration;
-
     public FreezeEffect(int duration) {
-        super(0.0f, duration, "Freeze");  // Adjust constructor parameters
-        this.duration = duration;
+        super(0.0f, duration, "Freeze");
     }
 
     @Override
     public void applyEffect(Character target) {
+        System.out.println(target.getName() + " is frozen!");
         // Logic to apply freeze effect (e.g., reduce speed or skip turns)
         target.setSpd(target.getSpd() - 10); // Example: reduce speed by 10
     }

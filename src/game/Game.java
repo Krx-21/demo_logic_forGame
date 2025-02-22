@@ -29,6 +29,9 @@ import java.util.Optional;
 import java.util.Random;
 
 public class Game {
+    // สมมุติว่าเรามี instance ของ Game ที่ใช้ในระบบ turn
+    private static Game currentGame;
+
     private final Scene gameScene;
     private final Stage gameStage;
     private final Difficulty gameDifficulty;
@@ -47,6 +50,7 @@ public class Game {
     private Character currentEnemy;
     
     public Game(Stage stage, Difficulty difficulty) {
+        currentGame = this;
         this.gameStage = stage;
         this.gameDifficulty = difficulty;
         this.themeList = new ArrayList<>();
@@ -58,7 +62,7 @@ public class Game {
         this.monsterHP = 0; // Initial monster HP
         
         // ใน constructor ของ Game.java
-        player = new Character("Adventurer", 100, 30, 20, 60);
+        player = new Character("Adventurer", 100, 30, 20, 60, 80);
         
         initializeThemes();
         initializeMonstersAndBosses();
@@ -196,17 +200,45 @@ public class Game {
     
     private void enemyAttack() {
         System.out.println("Enemy's turn: " + currentEnemy.getName() + " is attacking!");
-        int damage;
-        if (currentEnemy instanceof IceDrake) {
-            damage = ((IceDrake) currentEnemy).performAttack();
-        } else {
-            damage = currentEnemy.getAtk();
+        
+        int damage = 0;
+        boolean useEnemySkill = false;
+        
+        // หากระดับความยาก (gameDifficulty) สูง (เช่น HARD หรือ NIGHTMARE) ให้คู่ต่อสู้มีโอกาสใช้สกิลโจมตีแทนพื้นฐาน
+        if (gameDifficulty == Difficulty.HARD || gameDifficulty == Difficulty.NIGHTMARE) {
+            // logic สำหรับระดับ HARD และ NIGHTMARE
+            useEnemySkill = randomGenerator.nextBoolean(); // 50% chance ใช้สกิล
         }
-        System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
-        player.takeDamage(damage); // หัก HP ของ player
+        
+        if (useEnemySkill && currentEnemy.getSkills() != null && !currentEnemy.getSkills().isEmpty()) {
+            // เลือกสกิลแบบสุ่ม
+            int index = randomGenerator.nextInt(currentEnemy.getSkills().size());
+            Skill enemySkill = currentEnemy.getSkills().get(index);
+            System.out.println(currentEnemy.getName() + " uses " + enemySkill.getName() + "!");
+            // ใช้สกิลโจมตีผู้เล่น
+            enemySkill.use(currentEnemy, player);
+            // สมมุติว่า enemySkill.use() จะแสดงค่า damage ใน log แล้ว
+        } else {
+            // ใช้การโจมตีพื้นฐาน
+            if (currentEnemy instanceof IceDrake) {
+                damage = ((IceDrake) currentEnemy).performAttack();
+            } else {
+                damage = currentEnemy.getAtk();
+            }
+            System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
+            player.takeDamage(damage);
+        }
+        
+        // อัปเดตค่า HP ของผู้เล่น และ Label
         playerHP = player.getHp();
         playerHPLabel.setText("Player HP: " + playerHP);
-        System.out.println("After enemy attack, Player HP: " + playerHP);
+        
+        // ตัวอย่างปรับ Status เสริมจากคู่ต่อสู้ในระดับความยากสูง (เช่น บังคับให้เกิด Burn effect)
+        if (gameDifficulty == Difficulty.HARD || gameDifficulty == Difficulty.NIGHTMARE) {
+            System.out.println(currentEnemy.getName() + " inflicts additional Burn effect on the Player due to high difficulty.");
+            // ใช้สกิลหรือเอฟเฟกต์ Burn โดยปรับค่าสำหรับระดับความยากนี้
+            player.applyEffect(new effects.FireBurn(2.0f, 2));
+        }
         
         if (playerHP <= 0) {
             System.out.println("Game Over! Returning to Main Menu...");
@@ -216,9 +248,14 @@ public class Game {
     }
     
     private void showSkillDialog() {
-        List<String> skills = new ArrayList<>(SkillRepository.getAllSkillNames());
+        // สร้างรายชื่อสกิลจาก SkillRepository โดยใช้ explicit loop เพราะ getAllSkillNames() คืน Iterable<String>
+        List<String> skillNames = new ArrayList<>();
+        for (String skill : SkillRepository.getAllSkillNames()) {
+            skillNames.add(skill);
+        }
         
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(skills.get(0), skills);
+        // สร้าง ChoiceDialog โดยกำหนดค่า default เป็นสกิลตัวแรก
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(skillNames.get(0), skillNames);
         dialog.setTitle("Choose Skill");
         dialog.setHeaderText("Select a skill to use:");
         
@@ -230,26 +267,25 @@ public class Game {
         Skill skill = SkillRepository.getSkill(skillName);
         if (skill != null) {
             System.out.println("Using skill: " + skill.getName());
-            // บันทึก HP ของศัตรูก่อนโจมตี
-            int enemyHPBefore = currentEnemy.getHp();
+            
+            // บันทึกค่า HP ของผู้ถูกโจมตีก่อนใช้สกิล
+            int enemyHpBefore = currentEnemy.getHp();
             // ใช้สกิลโจมตี
             skill.use(player, currentEnemy);
-            // บันทึก HP หลังโจมตี
-            int enemyHPAfter = currentEnemy.getHp();
-            // คำนวณดาเมจที่เกิดขึ้น
-            int damageDone = enemyHPBefore - enemyHPAfter;
+            // อัปเดตค่า HP ของศัตรูหลังโจมตี และคำนวณดาเมจที่ทำได้
+            int enemyHpAfter = currentEnemy.getHp();
+            int damageDone = enemyHpBefore - enemyHpAfter;
             System.out.println("Player deals " + damageDone + " damage to " + currentEnemy.getName());
-            // อัปเดต Label แสดง HP ของศัตรู
-            monsterHP = enemyHPAfter;
+            
+            monsterHP = enemyHpAfter;
             monsterHPLabel.setText("Monster HP: " + monsterHP);
 
-            // หากศัตรูยังมี HP อยู่ ให้ดำเนินการให้ฝ่ายศัตรูโจมตี
-            if (monsterHP > 0) {
+            if (monsterHP <= 0) {
+                System.out.println("Enemy defeated!");
+                fight();  // เริ่มรอบใหม่
+            } else {
                 System.out.println("Player turn complete. Now enemy's turn.");
                 enemyAttack();
-            } else {
-                System.out.println("Enemy defeated!");
-                fight(); // เริ่มรอบต่อไป
             }
         }
     }
@@ -258,6 +294,48 @@ public class Game {
         System.out.println("Using item...");
         playerHP += 10;
         playerHPLabel.setText("Player HP: " + playerHP);
+    }
+    
+    private void printAllSkillInfo() {
+        System.out.println("Available Skills:");
+        for (String skillName : SkillRepository.getAllSkillNames()) {
+            Skill skill = SkillRepository.getSkill(skillName);
+            System.out.println("- " + skill.getName() + ": " + skill.getDescription() 
+                + " [Mana Cost: " + skill.getManaCost() + ", Cooldown: " + skill.getCooldown() + "]");
+        }
+    }
+    
+    // Method คำนวณ hit chance โดยใช้สูตร: attackerAcc / (attackerAcc + defenderSpd)
+    private boolean doesAttackHit(Character attacker, Character defender) {
+        double hitChance = (double) attacker.getAccuracy() / (attacker.getAccuracy() + defender.getSpd());
+        System.out.println("HitChance = " + hitChance);
+        return Math.random() < hitChance;
+    }
+    
+    // ตัวอย่างวิธีใช้งานใน attack method
+    private void performAttack(Character attacker, Character defender) {
+        if (doesAttackHit(attacker, defender)) {
+            int damage = attacker.getAtk() - defender.getDef();
+            damage = Math.max(damage, 1);
+            defender.takeDamage(damage);
+            System.out.println(attacker.getName() + " attacks and deals " + damage + " damage to " + defender.getName());
+        } else {
+            System.out.println(attacker.getName() + "'s attack missed " + defender.getName());
+        }
+    }
+    
+    // เมธอดสำหรับเริ่มเทิร์นของผู้ใช้งาน
+    public void startUserTurn() {
+        System.out.println("User's turn starts again!");
+        // โค้ดเปิดใช้งานควบคุมผู้เล่นและรีเซ็ตสถานะที่เกี่ยวข้องกับเทิร์นนี้
+    }
+    
+    // เมธอด static ที่เรียกใช้เมธอด startUserTurn() จาก instance ปัจจุบัน
+    public static void grantUserExtraTurn() {
+        System.out.println("An extra turn has been granted to the user!");
+        if (currentGame != null) {
+            currentGame.startUserTurn();
+        }
     }
     
 }

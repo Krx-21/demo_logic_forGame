@@ -1,21 +1,22 @@
 package skills;
 
+import characters.Character;
+
 /*
  * Skill: คลาสพื้นฐานสำหรับสกิล
  * มีชื่อ ดาเมจ ค่าคอสต์ คำอธิบาย และเมธอด use(...) สำหรับใช้งานสกิล
  */
 
-
-public class Skill {
+public abstract class Skill {
     private String name;
-    private int damage;
-    private int cost;
+    private int manaCost;
+    private int cooldown;
     private String description;
 
-    public Skill(String name, int damage, int cost, String description) {
+    public Skill(String name, int manaCost, int cooldown, String description) {
         this.name = name;
-        this.damage = damage;
-        this.cost = cost;
+        this.manaCost = manaCost;
+        this.cooldown = cooldown;
         this.description = description;
     }
 
@@ -23,19 +24,17 @@ public class Skill {
         return name;
     }
 
-    public int getDamage() {
-        return damage;
+    public int getManaCost() {
+        return manaCost;
     }
 
-    public int getCost() {
-        return cost;
+    public int getCooldown() {
+        return cooldown;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void use(characters.Character user, characters.Character target) {
-        // Default or abstract logic, depending on your design
-    }
+    public abstract void use(Character user, Character target);
 }

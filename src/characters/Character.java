@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import skills.Skill;
 import effects.BaseDotEffect;
+// สมมุติว่า BaseBuff และ BaseDebuff อยู่ใน package buffs และ debuffs
 import buffs.BaseBuff;
 import debuffs.BaseDebuff;
-import effects.FireBurn;
 
 /*
  * Character: คลาสพื้นฐานสำหรับตัวละครทั้งผู้เล่นและศัตรู
@@ -19,88 +19,76 @@ public class Character {
     protected int atk;
     protected int def;
     protected int spd;
+    protected int accuracy;
+    protected List<Skill> skills;
     protected List<BaseDotEffect> dotEffects;
     protected List<BaseBuff> buffs;
     protected List<BaseDebuff> debuffs;
-    protected List<Skill> skills; // ถ้าต้องการ
 
-    public Character(String name, int hp, int atk, int def, int spd) {
+    public Character(String name, int hp, int atk, int def, int spd, int accuracy) {
         this.name = name;
         this.hp = hp;
         this.atk = atk;
         this.def = def;
         this.spd = spd;
-        // ตรวจสอบให้แน่ใจว่าตัวแปรอื่น ๆ ถูก initialize แล้ว
+        this.accuracy = accuracy;
+        this.skills = new ArrayList<>();
         this.dotEffects = new ArrayList<>();
         this.buffs = new ArrayList<>();
         this.debuffs = new ArrayList<>();
     }
     
-    // Overloaded constructor เมื่อมีสกิล
+    public Character(String name, int hp, int atk, int def, int spd) {
+        this(name, hp, atk, def, spd, 100);
+    }
+    
     public Character(String name, int hp, int atk, int def, int spd, List<Skill> skills) {
-        this(name, hp, atk, def, spd);
+        this(name, hp, atk, def, spd, 100);
         this.skills = skills;
     }
-
-    public void takeDamage(int damage) {
+    
+    public int getHp() { return hp; }
+    public void takeDamage(int damage) { 
         this.hp -= damage;
-        if (this.hp < 0) {
-            this.hp = 0;
-        }
+        if (this.hp < 0) this.hp = 0;
     }
-
-    public int getHp() {
-        return hp;
-    }
+    public String getName() { return name; }
+    public int getAtk() { return atk; }
+    public int getDef() { return def; }
+    public int getSpd() { return spd; }
+    public int getAccuracy() { return accuracy; }
+    public void setAccuracy(int accuracy) { this.accuracy = accuracy; }
+    public List<Skill> getSkills() { return skills; }
     
-    public String getName() {
-        return name;
-    }
-    
-    public int getAtk() {
-        return atk;
-    }
-    
-    public int getSpd() {
-        return spd;
-    }
-    
+    // เพิ่ม method setSpd เพื่อให้สามารถปรับ speed ได้จากภายนอก
     public void setSpd(int spd) {
         this.spd = spd;
     }
     
-    // เพิ่มเมธอด getDef() และ setDef()
-    public int getDef() {
-        return def;
-    }
-    
-    public void setDef(int def) {
-        this.def = def;
-    }
-    
-    // ตัวอย่าง applyEffect ที่เกิดปัญหา
+    // ใช้ method applyEffect เพียงตัวเดียวสำหรับทุก BaseDotEffect
     public void applyEffect(BaseDotEffect effect) {
-        // dotEffects ต้องไม่เป็น null
         dotEffects.add(effect);
         effect.applyEffect(this);
     }
-
-    public void applyBuff(BaseBuff buff) {
+    
+    public void addBuff(BaseBuff buff) {
         buffs.add(buff);
-        buff.applyBuff(this);
+        buff.apply(this);
     }
-
-    public void applyDebuff(BaseDebuff debuff) {
+    
+    public void addDebuff(BaseDebuff debuff) {
         debuffs.add(debuff);
-        debuff.applyDebuff(this);
+        debuff.apply(this);
     }
-
-    public void applyEffect(FireBurn effect) {
-        // Implement effect application logic
+    
+    // เมธอด heal() และ increaseDef() ตามที่ใช้งานใน Reconstruct
+    public void heal(int amount) {
+        this.hp += amount;
+        System.out.println(name + " heals for " + amount + " HP.");
     }
-
-    public boolean hasEnoughCost(int cost) {
-        // ตรวจสอบค่า MP เป็นต้น
-        return true;
+    
+    public void increaseDef(int amount) {
+        this.def += amount;
+        System.out.println(name + "'s DEF increases by " + amount + ".");
     }
 }

@@ -12,7 +12,7 @@ public class FireToss extends Skill {
     private int baseDamage;
 
     public FireToss() {
-        super("Fire Toss", 0, 20, "Deals fire damage based on user's Atk and applies burning effect.");
+        super("Fire Toss", 20, 0, "Deals fire damage based on user's Atk and applies burning effect.");
         this.baseDamage = 25;
         this.multiplier = 1.5;
     }
@@ -21,7 +21,7 @@ public class FireToss extends Skill {
     public void use(Character user, Character target) {
         int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.15)), 1);
         target.takeDamage(damage);
-        // สมมุติว่า FireBurn constructor ต้องการ (float burnRate, int duration)
+        // FireBurn ต้องมี constructor รับ (float burnRate, int duration)
         target.applyEffect(new FireBurn(3.0f, 3));
         System.out.println(user.getName() + " uses " + getName() + " dealing " + damage + " damage.");
     }

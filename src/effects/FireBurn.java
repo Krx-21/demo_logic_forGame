@@ -1,27 +1,28 @@
 package effects;
 
-/*
- * FireBurn: เอฟเฟกต์เผาไหม้ ศัตรูจะได้รับดาเมจต่อเนื่องเมื่อโดนสกิลไฟ
- */
+import characters.Character;
 
 public class FireBurn extends BaseDotEffect {
-
-    public FireBurn(float damagePerTurn, int duration) {
-        super(damagePerTurn, duration, "Fire Burn");
+    private float burnRate;
+    
+    public FireBurn(float burnRate, int duration) {
+        super(burnRate, duration, "Fire Burn");
+        this.burnRate = burnRate;
     }
-
+    
     @Override
-    public void applyEffect(characters.Character target) {
-        // Logic to apply fire burn effect
+    public void applyEffect(Character target) {
+        // ตัวอย่าง: ลด HP ทีละนิดใน tick หรือเพิ่มเอฟเฟกต์ burning อื่น ๆ
+        System.out.println(target.getName() + " is burning with a rate of " + burnRate);
     }
-
+    
     @Override
-    public void removeEffect(characters.Character target) {
-        // Logic to remove fire burn effect
+    public void removeEffect(Character target) {
+        // กำจัดเอฟเฟกต์ burning เมื่อหมด duration
     }
-
+    
     @Override
-    public void tickEffect(characters.Character target) {
-        // Logic to apply damage per turn
+    public void tickEffect(Character target) {
+        // ดำเนินการ effect ทีละ tick
     }
 }

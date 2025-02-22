@@ -1,17 +1,18 @@
 package effects;
+import characters.Character;
 
 public abstract class BaseDotEffect {
-    protected float damagePerTurn;
+    protected float rate;
     protected int duration;
-    protected String effectName;
-
-    public BaseDotEffect(float damagePerTurn, int duration, String effectName) {
-        this.damagePerTurn = damagePerTurn;
+    protected String name;
+    
+    public BaseDotEffect(float rate, int duration, String name) {
+        this.rate = rate;
         this.duration = duration;
-        this.effectName = effectName;
+        this.name = name;
     }
-
-    public abstract void applyEffect(characters.Character target);
-    public abstract void removeEffect(characters.Character target);
-    public abstract void tickEffect(characters.Character target);
+    
+    public abstract void applyEffect(Character target);
+    public abstract void tickEffect(Character target);
+    public abstract void removeEffect(Character target);
 }
