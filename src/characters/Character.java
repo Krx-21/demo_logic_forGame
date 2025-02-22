@@ -15,6 +15,7 @@ import debuffs.BaseDebuff;
 
 public class Character {
     protected String name;
+    protected int maxHp;  // เพิ่มตัวแปรเก็บค่า HP สูงสุด
     protected int hp;
     protected int atk;
     protected int def;
@@ -29,6 +30,7 @@ public class Character {
 
     public Character(String name, int hp, int atk, int def, int spd, int accuracy) {
         this.name = name;
+        this.maxHp = hp;  // เก็บค่า HP สูงสุด
         this.hp = hp;
         this.atk = atk;
         this.def = def;
@@ -101,5 +103,14 @@ public class Character {
 
     public void setAttack(int attack) {
         this.attack = attack;
+    }
+
+    // เพิ่มเมธอดใหม่
+    public int getMaxHp() {
+        return maxHp;
+    }
+
+    public void setHp(int hp) {
+        this.hp = Math.max(0, Math.min(hp, maxHp));  // ป้องกันค่า HP ต่ำกว่า 0 หรือเกิน maxHp
     }
 }

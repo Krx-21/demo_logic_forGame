@@ -26,7 +26,6 @@ import enemies.*;
 import skills.*;
 import java.util.List;
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
@@ -45,6 +44,9 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Tooltip;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.HashSet;
 
 public class Game {
     // สมมุติว่าเรามี instance ของ Game ที่ใช้ในระบบ turn
@@ -69,6 +71,8 @@ public class Game {
     private DifficultyManager difficultyManager;  // เพิ่มตัวแปร
     private HBox mainButtonBox;
     private HBox skillButtonBox;
+    private Set<Monster> defeatedMonsters;  // เปลี่ยนจาก List เป็น Set
+    private boolean isFightingBoss;
     
     public Game(Stage stage, Difficulty difficulty) {
         this.gameStage = stage;
@@ -82,6 +86,8 @@ public class Game {
         this.roundsCompleted = 0;
         this.playerHP = 100; // Initial player HP
         this.monsterHP = 0; // Initial monster HP
+        this.defeatedMonsters = new HashSet<>();  // ใช้ HashSet แทน ArrayList
+        this.isFightingBoss = false;
         
         // ใน constructor ของ Game.java
         player = new Player("Adventurer");  // สร้าง Player แทน Character
@@ -130,7 +136,7 @@ public class Game {
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: #2c3e50;");
 
-        // แสดงสถานะ
+        // Status labels
         playerHPLabel = new Label("Player HP: " + player.getHp());
         monsterHPLabel = new Label("Monster HP: ---");
         enemyNameLabel = new Label("Enemy: ---");
@@ -153,13 +159,17 @@ public class Game {
         skillButtonBox.setVisible(false);
         skillButtonBox.setManaged(false);
 
+        // Dev button for testing
+        Button devKillButton = createDevButton("DEV WANT TO KILL YOU!!", e -> devKill());
+
         // Add all components
         root.getChildren().addAll(
             playerHPLabel, 
             monsterHPLabel, 
             enemyNameLabel, 
             mainButtonBox,
-            skillButtonBox
+            skillButtonBox,
+            devKillButton  // เพิ่มปุ่ม Dev
         );
 
         fight();
@@ -297,35 +307,55 @@ public class Game {
     }
     
     private void fight() {
-        // เลือกมอนสเตอร์แบบสุ่ม
-        Random random = new Random();
-        currentEnemy = monsterList.get(random.nextInt(monsterList.size()));
-        monsterHP = currentEnemy.getHp();
-        
-        // แสดงชื่อและ HP ของมอนสเตอร์
-        enemyNameLabel.setText("Enemy: " + currentEnemy.getName());
-        monsterHPLabel.setText("Monster HP: " + monsterHP);
-        playerHPLabel.setText("Player HP: " + player.getHp());
-        
-        // เช็ค Speed เพื่อกำหนดใครเริ่มก่อน
-        if (player.getSpd() > currentEnemy.getSpd()) {
-            System.out.println("Player is faster! Player goes first.");
-            // ผู้เล่นเริ่มก่อน (ไม่ต้องทำอะไรเพราะปุ่มควบคุมพร้อมใช้งานอยู่แล้ว)
-        } else if (player.getSpd() < currentEnemy.getSpd()) {
-            System.out.println("Enemy is faster! Enemy goes first.");
-            enemyAttack();  // ศัตรูโจมตีก่อน
-        } else {
-            // ถ้า Speed เท่ากัน สุ่มว่าใครจะได้เริ่มก่อน
-            if (random.nextBoolean()) {
-                System.out.println("Equal speed! Random decided player goes first.");
-                // ผู้เล่นเริ่มก่อน
+        // ถ้ากำลังสู้กับบอสอยู่ ให้สู้ต่อ
+        if (isFightingBoss && !bossList.isEmpty()) {
+            currentEnemy = bossList.get(0);
+            System.out.println("Fighting boss: " + currentEnemy.getName());
+        } 
+        // ถ้าเคลียร์มอนสเตอร์ครบแล้ว และยังไม่ได้สู้กับบอส
+        else if (defeatedMonsters.size() >= monsterList.size() && !bossList.isEmpty() && !isFightingBoss) {
+            currentEnemy = bossList.get(0);
+            isFightingBoss = true;
+            System.out.println("Starting boss fight: " + currentEnemy.getName());
+        }
+        // ถ้าเคลียร์บอสแล้ว หรือไม่มีบอส
+        else if ((defeatedMonsters.size() >= monsterList.size() && bossList.isEmpty()) || 
+                 (isFightingBoss && bossList.isEmpty())) {
+            // เปลี่ยนธีม
+            if (!themeList.isEmpty()) {
+                currentTheme = themeList.remove(0);
+                defeatedMonsters.clear();
+                isFightingBoss = false;
+                System.out.println("\nChanging to new theme: " + currentTheme);
+                initializeMonstersAndBosses();
+                fight();
+                return;
             } else {
-                System.out.println("Equal speed! Random decided enemy goes first.");
-                enemyAttack();  // ศัตรูโจมตีก่อน
+                showGameCompleteAlert();
+                return;
             }
         }
+        // สุ่มมอนสเตอร์ที่ยังไม่เคยเจอ
+        else {
+            List<Monster> availableMonsters = monsterList.stream()
+                    .filter(m -> !defeatedMonsters.contains(m))
+                    .collect(Collectors.toList());
+            
+            if (!availableMonsters.isEmpty()) {
+                currentEnemy = availableMonsters.get(randomGenerator.nextInt(availableMonsters.size()));
+                System.out.println("Fighting monster: " + currentEnemy.getName());
+            } else {
+                System.out.println("No available monsters left!");
+                return;
+            }
+        }
+
+        // รีเซ็ต HP ของศัตรู
+        resetEnemyStats();
+        updateUI();
+        determineFirstAttacker();
     }
-    
+
     private void playerAttack() {
         Skill skill = SkillRepository.getSkill("Ice Blast");
         System.out.println("Player attacks " + currentEnemy.getName() + " with " + skill.getName());
@@ -468,7 +498,6 @@ public class Game {
             Player playerChar = (Player) player;
             List<Skill> playerSkills = playerChar.getSkills();
             
-            // หาสกิลที่เลือกจากรายการสกิลของผู้เล่น
             Skill selectedSkill = playerSkills.stream()
                 .filter(skill -> skill.getName().equals(skillName))
                 .findFirst()
@@ -477,18 +506,11 @@ public class Game {
             if (selectedSkill != null) {
                 System.out.println("Using skill: " + selectedSkill.getName());
                 
-                // บันทึกค่า HP ของศัตรูก่อนใช้สกิล
                 int enemyHpBefore = currentEnemy.getHp();
-                
-                // ใช้สกิล
                 selectedSkill.use(player, currentEnemy);
-                
-                // อัพเดต HP ของศัตรู
                 int enemyHpAfter = currentEnemy.getHp();
-                int damageDone = enemyHpBefore - enemyHpAfter;
                 
-                System.out.println("Player deals " + damageDone + " damage to " + currentEnemy.getName());
-                
+                // อัพเดตค่า monsterHP จาก HP ปัจจุบันของมอนสเตอร์
                 monsterHP = enemyHpAfter;
                 monsterHPLabel.setText("Monster HP: " + monsterHP);
 
@@ -497,7 +519,7 @@ public class Game {
                     if (currentEnemy instanceof Monster) {
                         showVictoryAlert((Monster) currentEnemy);
                     }
-                    fight();  // เริ่มรอบใหม่
+                    fight();
                 } else {
                     System.out.println("Player turn complete. Now enemy's turn.");
                     enemyAttack();
@@ -557,47 +579,193 @@ public class Game {
     }
 
     private void showVictoryAlert(Monster defeatedEnemy) {
+        if (!isFightingBoss) {
+            defeatedMonsters.add(defeatedEnemy);
+        } else if (bossList.contains(defeatedEnemy)) {
+            bossList.remove(0);
+            isFightingBoss = false;
+        }
+
+        // คำนวณ XP ที่ได้รับ
+        int xpGained = calculateXPGained(defeatedEnemy);
+        
         Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
         victoryAlert.setTitle("Victory!");
-        victoryAlert.setHeaderText("Enemy Defeated!");
+        victoryAlert.setHeaderText("You defeated " + defeatedEnemy.getName() + "!");
         
-        // Calculate XP gained based on enemy stats and difficulty
-        int xpGained = calculateXPGained(defeatedEnemy);
-        player.addXP(xpGained);
-        
-        StringBuilder message = new StringBuilder();
-        message.append("You have defeated ").append(defeatedEnemy.getName()).append("!\n");
-        message.append("XP Gained: ").append(xpGained).append("\n");
-        message.append("Current Level: ").append(player.getLevel()).append("\n");
-        message.append("XP: ").append(player.getCurrentXP()).append("/").append(player.getXPToNextLevel());
-        
-        if (bossList.stream().anyMatch(boss -> boss.getName().equals(defeatedEnemy.getName()))) {
-            message.append("\nCongratulations on defeating the boss!");
-            message.append("\nYou've cleared this theme!");
+        if (bossList.contains(defeatedEnemy)) {  // เช็คว่าเป็นบอสหรือไม่
+            victoryAlert.setContentText("Congratulations! You've defeated the boss! XP gained: " + xpGained);
+        } else {
+            victoryAlert.setContentText("You gained " + xpGained + " experience points!");
         }
         
-        victoryAlert.setContentText(message.toString());
         victoryAlert.showAndWait();
+        
+        // เพิ่มประสบการณ์ให้ผู้เล่น
+        if (player instanceof Player) {
+            ((Player) player).addXP(xpGained);  // เปลี่ยนจาก gainExperience เป็น addXP
+        }
+        
+        fight();
     }
 
     private int calculateXPGained(Monster defeatedEnemy) {
-        // Base XP calculation based on enemy stats
-        int baseXP = (defeatedEnemy.getHp() / 10) + 
+        int baseXP = (defeatedEnemy.getMaxHp() / 10) + 
                      (defeatedEnemy.getAtk() * 2) + 
                      (defeatedEnemy.getDef() * 2) + 
                      (defeatedEnemy.getSpd());
                      
-        // Bonus XP for boss
-        if (bossList.stream().anyMatch(boss -> boss.getName().equals(defeatedEnemy.getName()))) {
-            baseXP *= 2;
+        if (bossList.contains(defeatedEnemy)) {  // เช็คว่าเป็นบอสหรือไม่
+            baseXP *= 3;
         }
         
-        // Apply difficulty multiplier
-        return (int)(baseXP * difficultyManager.getExpMultiplier());
+        switch (gameDifficulty) {
+            case EASY:
+                baseXP = (int)(baseXP * 0.8);
+                break;
+            case HARD:
+                baseXP = (int)(baseXP * 1.2);
+                break;
+            default: // NORMAL
+                break;
+        }
+        
+        return baseXP;
+    }
+
+    private void showDefeatAlert() {
+        Alert defeatAlert = new Alert(Alert.AlertType.INFORMATION);
+        defeatAlert.setTitle("Defeat!");
+        defeatAlert.setHeaderText("You have been defeated!");
+        defeatAlert.setContentText("Better luck next time!");
+        defeatAlert.showAndWait().ifPresent(response -> {
+            MainMenu mainMenu = new MainMenu(gameStage);
+            gameStage.setScene(mainMenu.getCustomScene());
+        });
     }
     
     public List<Skill> getSkills() {
         // แทนที่จะส่งคืน this.skills ให้ส่งคืนสกิลจาก player แทน
         return player.getSkills();
+    }
+
+    private Button createDevButton(String text, EventHandler<ActionEvent> handler) {
+        Button button = new Button(text);
+        button.setPrefWidth(300);
+        button.setPrefHeight(40);
+        button.setStyle(
+            "-fx-font-size: 16px; " +
+            "-fx-background-color: #c0392b; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 10px; " +
+            "-fx-border-color: #922b21; " +
+            "-fx-border-width: 2px; " +
+            "-fx-background-radius: 5; " +
+            "-fx-border-radius: 5;"
+        );
+        
+        button.setOnMouseEntered(e -> 
+            button.setStyle(button.getStyle() + "-fx-background-color: #922b21;"));
+        
+        button.setOnMouseExited(e -> 
+            button.setStyle(button.getStyle() + "-fx-background-color: #c0392b;"));
+        
+        button.setOnAction(handler);
+        return button;
+    }
+
+    private void devKill() {
+        if (currentEnemy != null) {
+            System.out.println("Developer used instant kill!");
+            
+            // ให้ devKill ทำงานกับทั้งมอนสเตอร์และบอส
+            currentEnemy.setHp(0);
+            monsterHP = 0;
+            monsterHPLabel.setText("Monster HP: " + monsterHP);
+
+            System.out.println("Enemy defeated by dev command!");
+            
+            if (isFightingBoss) {
+                bossList.remove(0);  // ลบบอสออกจากลิสต์
+                isFightingBoss = false;
+            } else {
+                defeatedMonsters.add((Monster)currentEnemy);  // เพิ่มมอนสเตอร์เข้าลิสต์ที่เอาชนะแล้ว
+            }
+            
+            // แสดง victory alert สำหรับทั้งมอนสเตอร์และบอส
+            if (currentEnemy instanceof Monster) {
+                showVictoryAlert((Monster)currentEnemy);
+            }
+            
+            fight();  // เริ่มการต่อสู้ใหม่
+        }
+    }
+
+    private void showGameCompleteAlert() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Congratulations!");
+        alert.setHeaderText("You've completed all themes!");
+        alert.setContentText("You are truly a master adventurer!");
+        alert.showAndWait().ifPresent(response -> {
+            MainMenu mainMenu = new MainMenu(gameStage);
+            gameStage.setScene(mainMenu.getCustomScene());
+        });
+    }
+
+    private void determineFirstAttacker() {
+        // ตรวจสอบความเร็วเพื่อกำหนดผู้เริ่มต้น
+        if (player.getSpd() > currentEnemy.getSpd()) {
+            System.out.println("Player is faster! Player goes first.");
+        } else if (player.getSpd() < currentEnemy.getSpd()) {
+            System.out.println("Enemy is faster! Enemy goes first.");
+            enemyAttack();
+        } else {
+            // ถ้าความเร็วเท่ากัน สุ่มผู้เริ่มต้น
+            if (randomGenerator.nextBoolean()) {
+                System.out.println("Equal speed! Random decided player goes first.");
+            } else {
+                System.out.println("Equal speed! Random decided enemy goes first.");
+                enemyAttack();
+            }
+        }
+    }
+
+    private void resetEnemyStats() {
+        // รีเซ็ต HP ของศัตรู
+        if (isFightingBoss && currentEnemy instanceof BaseBoss) {
+            currentEnemy = new BaseBoss(
+                currentEnemy.getName(),
+                currentEnemy.getMaxHp(),
+                currentEnemy.getAtk(),
+                currentEnemy.getDef(),
+                currentEnemy.getSpd(),
+                currentEnemy.getSkills(),
+                ((BaseBoss)currentEnemy).getFieldEffect()
+            );
+        } else {
+            currentEnemy = new Monster(
+                currentEnemy.getName(),
+                currentEnemy.getMaxHp(),
+                currentEnemy.getAtk(),
+                currentEnemy.getDef(),
+                currentEnemy.getSpd(),
+                currentEnemy.getSkills()
+            );
+        }
+        monsterHP = currentEnemy.getHp();
+    }
+
+    private void updateUI() {
+        // อัพเดต UI แสดงสถานะการต่อสู้
+        enemyNameLabel.setText("Enemy: " + currentEnemy.getName());
+        monsterHPLabel.setText("Monster HP: " + monsterHP);
+        playerHPLabel.setText("Player HP: " + player.getHp());
+        
+        // แสดงข้อความว่ากำลังสู้กับใคร
+        if (isFightingBoss) {
+            System.out.println("Fighting boss: " + currentEnemy.getName());
+        } else {
+            System.out.println("Fighting monster: " + currentEnemy.getName());
+        }
     }
 }

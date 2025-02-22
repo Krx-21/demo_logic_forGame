@@ -1,10 +1,26 @@
 # Song of Twelve Feathers
 
-**Version 0.0.2a (Current)**
+**Version 0.0.2b (Current)**
 
 ## Version History
 
-### v0.0.2a (Latest)
+### v0.0.2b (Latest)
+**New Features & Improvements:**
+- **Combat System Overhaul**:
+  - Fixed boss fight progression system
+  - Implemented proper monster encounter system without duplicates
+  - Enhanced theme progression system
+  - Added developer testing tool (DEV WANT TO KILL YOU!! button)
+
+**Bug Fixes:**
+- Fixed boss encounters not triggering after defeating all monsters
+- Fixed duplicate monster encounters within the same theme
+- Fixed monsters respawning with 0 HP
+- Fixed infinite combat loops
+- Fixed dev tool not affecting bosses
+- Fixed experience point calculations
+
+### v0.0.2a
 **New Features & Improvements:**
 - Enhanced Player Character:
   - Increased base stats (HP: 500, ATK: 70, DEF: 45, SPD: 80)
