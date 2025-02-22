@@ -1,0 +1,9 @@
+cd "c:/Users/godof/Documents/CEDT/ProgMeth/ZPRO/new_game/javafx-project/src"
+javac --module-path "C:\Program Files\Java\javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml application/MainApp.java ui/MainMenu.java
+java --module-path "C:\Program Files\Java\javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml application.MainApp
+
+ตรวจสอบให้แน่ใจว่าคลาสทั้งหมดถูกใช้งานและรวมเข้าด้วยกันอย่างถูกต้อง
+ทดสอบแอปพลิเคชันเพื่อยืนยันว่าเมนูหลัก, การเลือกความยาก และหน้าจอเรื่องราวทำงานตามที่คาดหวัง
+ใช้ตรรกะของเกมสำหรับการเริ่มเกม, การจัดการการต่อสู้ และการจัดการการพัฒนาของตัวละคร
+เพิ่มเสียงเอฟเฟกต์และตรวจสอบให้แน่ใจว่าถูกจัดการโดย SoundManager อย่างถูกต้อง
+ทดสอบและแก้ไขข้อบกพร่องของแอปพลิเคชันอย่างต่อเนื่องเพื่อให้แน่ใจว่าประสบการณ์ผู้ใช้ราบรื่น
