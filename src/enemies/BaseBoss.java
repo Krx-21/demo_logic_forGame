@@ -1,21 +1,17 @@
 package enemies;
 
+import characters.Character;
 import fields.BaseFieldEffect;
 import skills.Skill;
 import java.util.List;
 
-/*
- * BaseBoss: ขยายจาก BaseEnemy เพื่อรองรับบอสในเกม
- * มีตัวแปร fieldEffect สำหรับการคุมเอฟเฟกต์สนาม (FieldEffect)
- */
-
-public class BaseBoss extends BaseEnemy {
+public class BaseBoss extends Character {
     protected BaseFieldEffect fieldEffect;
 
     public BaseBoss(String name, int hp, int atk, int def, int spd,
                     List<Skill> skills,
                     BaseFieldEffect fieldEffect) {
-        super(name, hp, atk, def, spd, skills);
+        super(name, hp, atk, def, spd);
         this.fieldEffect = fieldEffect;
     }
 

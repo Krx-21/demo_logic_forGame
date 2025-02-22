@@ -1,24 +1,28 @@
 package skills;
 
-import effects.FireBurn;
 import characters.Character;
+import effects.FireBurn;
 
 /*
  * FireToss: สกิลโฟกัสด้านไฟ โจมตีเป้าหมายด้วยดาเมจและติด FireBurn effect
  */
 
 public class FireToss extends Skill {
+    private double multiplier;
     private int baseDamage;
 
     public FireToss() {
-        super("Fire Toss", 30, 10, "Throws a fireball to deal damage and apply burn effect.");
-        this.baseDamage = 30;
+        super("Fire Toss", 0, 20, "Deals fire damage based on user's Atk and applies burning effect.");
+        this.baseDamage = 25;
+        this.multiplier = 1.5;
     }
 
     @Override
-    public void use(characters.Character user, characters.Character target) {
-        int damage = baseDamage + (int) (user.getAtk() * 0.5);
+    public void use(Character user, Character target) {
+        int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.15)), 1);
         target.takeDamage(damage);
-        target.applyEffect(new FireBurn(5, 3));
+        // สมมุติว่า FireBurn constructor ต้องการ (float burnRate, int duration)
+        target.applyEffect(new FireBurn(3.0f, 3));
+        System.out.println(user.getName() + " uses " + getName() + " dealing " + damage + " damage.");
     }
 }
