@@ -20,8 +20,8 @@ import javafx.stage.Stage;
 import skills.Skill;
 import skills.SkillRepository;
 import ui.MainMenu;
-import javafx.application.Platform; // เพิ่มบรรทัดนี้
-import player.Player;  // แก้ไข import ให้ถูกต้อง
+import javafx.application.Platform; 
+import player.Player;  
 import enemies.*;
 import skills.*;
 import java.util.List;
@@ -33,7 +33,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import player.Player;
 import game.DifficultyManager;
-import javafx.stage.Modality; // เพิ่มบรรทัดนี้
+import javafx.stage.Modality; 
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.scene.Scene;
@@ -47,6 +47,8 @@ import javafx.event.ActionEvent;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.HashSet;
+import ui_screens.UI_GameSummary;
+import game.GameStats;
 
 public class Game {
     // สมมุติว่าเรามี instance ของ Game ที่ใช้ในระบบ turn
@@ -73,10 +75,12 @@ public class Game {
     private HBox skillButtonBox;
     private Set<Monster> defeatedMonsters;  // เปลี่ยนจาก List เป็น Set
     private boolean isFightingBoss;
-    
+    private GameStats gameStats;
+
     public Game(Stage stage, Difficulty difficulty) {
         this.gameStage = stage;
         this.gameDifficulty = difficulty;
+        this.gameStats = new GameStats();  // สร้าง instance ของ GameStats
         gameStage.setResizable(false); // ไม่ให้ปรับขนาดหน้าต่างได้
         currentGame = this;
         this.themeList = new ArrayList<>();
@@ -383,6 +387,7 @@ public class Game {
             if (doesAttackHit(currentEnemy, player)) {
                 int damage = Math.max(currentEnemy.getAtk() - player.getDef(), 1);
                 player.takeDamage(damage);
+                gameStats.addDamageTaken(damage);
                 System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
                 playerHPLabel.setText("Player HP: " + player.getHp());
             } else {
@@ -514,6 +519,10 @@ public class Game {
                 monsterHP = enemyHpAfter;
                 monsterHPLabel.setText("Monster HP: " + monsterHP);
 
+                int damage = enemyHpBefore - enemyHpAfter;
+                gameStats.addDamageDealt(damage);
+                gameStats.incrementSkillsUsed();
+
                 if (monsterHP <= 0) {
                     System.out.println("Enemy defeated!");
                     if (currentEnemy instanceof Monster) {
@@ -579,46 +588,59 @@ public class Game {
     }
 
     private void showVictoryAlert(Monster defeatedEnemy) {
-        if (!isFightingBoss) {
-            defeatedMonsters.add(defeatedEnemy);
-        } else if (bossList.contains(defeatedEnemy)) {
+        // คำนวณ XP ก่อนที่จะเปลี่ยนแปลงสถานะใดๆ
+        int baseXP = calculateBaseXP(defeatedEnemy);
+        int bonusXP = isFightingBoss ? baseXP * 2 : 0;
+        int totalXP = baseXP + bonusXP;
+
+        // แสดง Alert และจัดการสถานะ
+        Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
+        victoryAlert.setTitle("Victory!");
+        
+        if (isFightingBoss) {
+            // จัดการสถานะบอส
             bossList.remove(0);
+            victoryAlert.setHeaderText("Boss Defeated: " + defeatedEnemy.getName());
+            victoryAlert.setContentText(String.format(
+                "Congratulations!\nBase XP: %d\nBoss Bonus: %d\nTotal XP gained: %d",
+                baseXP, bonusXP, totalXP
+            ));
+            System.out.println("Boss defeated! Gained " + totalXP + " XP (Base: " + baseXP + ", Bonus: " + bonusXP + ")");
+            gameStats.incrementBossesDefeated();
+        } else {
+            // จัดการสถานะมอนสเตอร์ธรรมดา
+            defeatedMonsters.add(defeatedEnemy);
+            victoryAlert.setHeaderText("Defeated: " + defeatedEnemy.getName());
+            victoryAlert.setContentText(String.format("Experience gained: %d", totalXP));
+            System.out.println("Monster defeated! Gained " + totalXP + " XP");
+            gameStats.incrementMonstersDefeated();
+        }
+
+        victoryAlert.showAndWait();
+
+        // ให้ XP กับผู้เล่น
+        if (player instanceof Player) {
+            ((Player) player).addXP(totalXP);
+        }
+
+        gameStats.addXP(totalXP);
+
+        // รีเซ็ตสถานะบอส
+        if (isFightingBoss) {
             isFightingBoss = false;
         }
 
-        // คำนวณ XP ที่ได้รับ
-        int xpGained = calculateXPGained(defeatedEnemy);
-        
-        Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
-        victoryAlert.setTitle("Victory!");
-        victoryAlert.setHeaderText("You defeated " + defeatedEnemy.getName() + "!");
-        
-        if (bossList.contains(defeatedEnemy)) {  // เช็คว่าเป็นบอสหรือไม่
-            victoryAlert.setContentText("Congratulations! You've defeated the boss! XP gained: " + xpGained);
-        } else {
-            victoryAlert.setContentText("You gained " + xpGained + " experience points!");
-        }
-        
-        victoryAlert.showAndWait();
-        
-        // เพิ่มประสบการณ์ให้ผู้เล่น
-        if (player instanceof Player) {
-            ((Player) player).addXP(xpGained);  // เปลี่ยนจาก gainExperience เป็น addXP
-        }
-        
         fight();
     }
 
-    private int calculateXPGained(Monster defeatedEnemy) {
-        int baseXP = (defeatedEnemy.getMaxHp() / 10) + 
-                     (defeatedEnemy.getAtk() * 2) + 
-                     (defeatedEnemy.getDef() * 2) + 
-                     (defeatedEnemy.getSpd());
-                     
-        if (bossList.contains(defeatedEnemy)) {  // เช็คว่าเป็นบอสหรือไม่
-            baseXP *= 3;
-        }
+    private int calculateBaseXP(Monster enemy) {
+        // ปรับสูตรคำนวณ XP
+        int baseXP = (enemy.getMaxHp() / 10) + 
+                     (enemy.getAtk() * 2) + 
+                     (enemy.getDef() * 2) + 
+                     (enemy.getSpd());
         
+        // ปรับตามความยาก
         switch (gameDifficulty) {
             case EASY:
                 baseXP = (int)(baseXP * 0.8);
@@ -678,38 +700,79 @@ public class Game {
         if (currentEnemy != null) {
             System.out.println("Developer used instant kill!");
             
-            // ให้ devKill ทำงานกับทั้งมอนสเตอร์และบอส
+            // คำนวณ XP
+            int baseXP = calculateBaseXP(currentEnemy);
+            int bonusXP = isFightingBoss ? baseXP * 2 : 0;
+            int totalXP = baseXP + bonusXP;
+            
+            // ให้ศัตรูตาย
             currentEnemy.setHp(0);
             monsterHP = 0;
             monsterHPLabel.setText("Monster HP: " + monsterHP);
 
             System.out.println("Enemy defeated by dev command!");
             
+            // แสดง Alert และให้ XP
+            Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
+            victoryAlert.setTitle("Victory!");
+            
             if (isFightingBoss) {
-                bossList.remove(0);  // ลบบอสออกจากลิสต์
+                bossList.remove(0);
                 isFightingBoss = false;
+                victoryAlert.setHeaderText("Boss Defeated: " + currentEnemy.getName());
+                victoryAlert.setContentText(String.format(
+                    "Congratulations!\nBase XP: %d\nBoss Bonus: %d\nTotal XP gained: %d",
+                    baseXP, bonusXP, totalXP
+                ));
+                gameStats.incrementBossesDefeated();
             } else {
-                defeatedMonsters.add((Monster)currentEnemy);  // เพิ่มมอนสเตอร์เข้าลิสต์ที่เอาชนะแล้ว
+                if (currentEnemy instanceof Monster) {
+                    defeatedMonsters.add((Monster)currentEnemy);
+                }
+                victoryAlert.setHeaderText("Defeated: " + currentEnemy.getName());
+                victoryAlert.setContentText(String.format("Experience gained: %d", totalXP));
+                gameStats.incrementMonstersDefeated();
             }
-            
-            // แสดง victory alert สำหรับทั้งมอนสเตอร์และบอส
-            if (currentEnemy instanceof Monster) {
-                showVictoryAlert((Monster)currentEnemy);
+
+            victoryAlert.showAndWait();
+
+            // ให้ XP กับผู้เล่น
+            if (player instanceof Player) {
+                ((Player) player).addXP(totalXP);
+                System.out.println("Player gained " + totalXP + " XP");
             }
+
+            gameStats.addXP(totalXP);
             
-            fight();  // เริ่มการต่อสู้ใหม่
+            fight();
         }
     }
 
+    private int calculateBaseXP(Character enemy) {  // เปลี่ยนจาก Monster เป็น Character
+        // ปรับสูตรคำนวณ XP
+        int baseXP = (enemy.getMaxHp() / 10) + 
+                     (enemy.getAtk() * 2) + 
+                     (enemy.getDef() * 2) + 
+                     (enemy.getSpd());
+        
+        // ปรับตามความยาก
+        switch (gameDifficulty) {
+            case EASY:
+                baseXP = (int)(baseXP * 0.8);
+                break;
+            case HARD:
+                baseXP = (int)(baseXP * 1.2);
+                break;
+            default: // NORMAL
+                break;
+        }
+        
+        return baseXP;
+    }
+
     private void showGameCompleteAlert() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Congratulations!");
-        alert.setHeaderText("You've completed all themes!");
-        alert.setContentText("You are truly a master adventurer!");
-        alert.showAndWait().ifPresent(response -> {
-            MainMenu mainMenu = new MainMenu(gameStage);
-            gameStage.setScene(mainMenu.getCustomScene());
-        });
+        UI_GameSummary summary = new UI_GameSummary(gameStage, (Player)player, gameStats);
+        gameStage.setScene(summary.getCustomScene()); // เปลี่ยนเป็น getCustomScene()
     }
 
     private void determineFirstAttacker() {

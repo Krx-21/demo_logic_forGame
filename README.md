@@ -1,10 +1,37 @@
 # Song of Twelve Feathers
 
-**Version 0.0.2b (Current)**
+**Version 0.0.3 (Current)**
 
 ## Version History
 
-### v0.0.2b (Latest)
+### v0.0.3 (Latest)
+**New Features & Improvements:**
+- **Enhanced Level-Up System**:
+  - Added manual stat point allocation
+  - Separate automatic and manual stat increases
+  - Improved stat growth visualization
+  - Real-time stat update display
+
+- **Game Summary System**:
+  - Added end-game statistics screen
+  - Tracks monsters and bosses defeated
+  - Displays total experience gained
+  - Shows damage dealt and taken
+  - Counts skills used throughout playthrough
+  - Final character status display
+
+- **Enhanced Battle System**:
+  - Improved boss experience rewards
+  - Added battle statistics tracking
+  - Fixed boss fight experience calculations
+
+**Bug Fixes:**
+- Fixed boss experience point rewards
+- Fixed monster duplicate encounters
+- Improved theme progression system
+- Enhanced battle completion logic
+
+### v0.0.2b
 **New Features & Improvements:**
 - **Combat System Overhaul**:
   - Fixed boss fight progression system
@@ -79,13 +106,39 @@ Every journey is different, as the world changes each time you venture forth. Th
 - **Multiple Playstyles**: Choose your path with a wide range of rewards—focus on offense, defense, magic, or resource management.
 
 ## Installation
-1. ติดตั้ง [JavaFX SDK](https://openjfx.io/) ให้ตรงกับเวอร์ชัน JDK
-2. ดาวน์โหลดหรือโคลนโปรเจกต์นี้จาก GitHub
-3. คอมไพล์ด้วยคำสั่ง:
-   ```bash
-   javac --module-path "path/to/javafx-sdk/lib" --add-modules javafx.controls,javafx.fxml -d out [ไฟล์ .java ที่เกี่ยวข้อง]
-4. รันเกมด้วยคำสั่ง:
-   java --module-path "path/to/javafx-sdk/lib" --add-modules javafx.controls,javafx.fxml -cp out application.MainApp
+1. Install [JavaFX SDK 23.0.2](https://openjfx.io/)
+2. Download or clone this project from GitHub
+3. Extract JavaFX SDK and copy the `javafx-sdk-23.0.2` folder to the project directory:
+   ```
+   javafx-project/
+   ├── src/
+   ├── bin/
+   ├── javafx-sdk-23.0.2/    <- Copy JavaFX SDK here
+   │   └── lib/
+   │       ├── javafx.base.jar
+   │       ├── javafx.controls.jar
+   │       ├── javafx.fxml.jar
+   │       └── ...
+   ├── compile_and_run.bat
+   └── README.md
+   ```
+4. Double-click `compile_and_run.bat` to compile and run the game
+
+### Alternative Manual Run
+If the batch file doesn't work, you can run these commands manually in the project directory:
+```bash
+# Compile
+javac --module-path "javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml -d bin -sourcepath src src/application/MainApp.java
+
+# Run
+java --module-path "javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml -cp bin application.MainApp
+```
+
+### Troubleshooting
+- Make sure Java 17 or higher is installed and set in PATH
+- Verify JavaFX SDK 23.0.2 is copied directly into the project folder
+- All commands should be run from the `javafx-project` directory
+- If using different JavaFX version, update the folder name in compile_and_run.bat
 
 ## Contributing
 สามารถ Fork โปรเจกต์หรือเปิด Pull Request เพื่อมีส่วนร่วมในการพัฒนาได้
@@ -114,4 +167,8 @@ Every journey is different, as the world changes each time you venture forth. Th
 
 ## How to Run
 ```bash
+# Compile
+javac --module-path "javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml -d bin -sourcepath src src/application/MainApp.java
 
+# Run
+java --module-path "javafx-sdk-23.0.2\lib" --add-modules javafx.controls,javafx.fxml -cp bin application.MainApp

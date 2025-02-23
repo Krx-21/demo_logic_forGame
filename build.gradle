@@ -1,8 +1,16 @@
 plugins {
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
 }
 
-mainClassName = 'application.MainApp'
+application {
+    mainClass = 'application.MainApp'
+}
+
+javafx {
+    version = '23.0.2'
+    modules = ['javafx.controls', 'javafx.fxml']
+}
 
 repositories {
     mavenCentral()
@@ -13,11 +21,10 @@ dependencies {
     implementation 'org.openjfx:javafx-fxml:17.0.1'
 }
 
-application {
-    mainModule = 'application'
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
 }
 
-javafx {
-    version = "23.0.2"
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
+run {
+    standardInput = System.in
 }
