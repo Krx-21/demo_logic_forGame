@@ -18,7 +18,7 @@ public class EarthQuake extends Skill {
     public void use(Character user, Character target) {
         int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.30)), 1);
         target.takeDamage(damage);
-        target.applyEffect(new DefenseDownEffect(3)); // ลดค่า def ของ target เป็นเวลา 3 เทิร์น
+        target.applyEffect(new DefenseDownEffect(3, 10)); // ลด DEF 10 เป็นเวลา 3 เทิร์น
         System.out.println(user.getName() + " uses " + getName() + " dealing " + damage + " damage.");
     }
 }

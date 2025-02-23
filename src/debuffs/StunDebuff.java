@@ -1,28 +1,32 @@
 package debuffs;
 
-public class StunDebuff extends BaseDebuff {
+import characters.Character;
 
+public class StunDebuff extends BaseDebuff {
+    
     public StunDebuff(int duration) {
         super("Stun", duration);
     }
-
+    
     @Override
-    public void applyDebuff(characters.Character target) {
-        // Logic to apply stun debuff
+    public void apply(Character target) {
+        target.setStunned(true);
+        System.out.println(target.getName() + " is stunned!");
     }
-
+    
     @Override
-    public void removeDebuff(characters.Character target) {
-        // Logic to remove stun debuff
+    public void remove(Character target) {
+        target.setStunned(false);
+        System.out.println(target.getName() + " is no longer stunned");
     }
-
+    
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for stun debuff
+    public void onTurnStart(Character target) {
+        System.out.println(target.getName() + " is stunned and cannot act!");
     }
-
+    
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for stun debuff
+    public void onTurnEnd(Character target) {
+        // No effect on turn end
     }
 }

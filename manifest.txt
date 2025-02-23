@@ -1,0 +1,2 @@
+Main-Class: application.MainApp
+Class-Path: lib/javafx.base.jar lib/javafx.controls.jar lib/javafx.fxml.jar lib/javafx.graphics.jar lib/javafx.media.jar lib/javafx.swing.jar lib/javafx.web.jar

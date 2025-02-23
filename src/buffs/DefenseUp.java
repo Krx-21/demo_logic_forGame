@@ -1,28 +1,28 @@
 package buffs;
 
+import characters.Character;
+
 public class DefenseUp extends BaseBuff {
+    private int defenseIncrease;
 
-    public DefenseUp(int duration) {
+    public DefenseUp(int duration, int defenseIncrease) {
         super("Defense Up", duration);
+        this.defenseIncrease = defenseIncrease;
     }
 
     @Override
-    public void applyBuff(characters.Character target) {
-        // Logic to apply defense up buff
+    public void apply(Character target) {
+        target.setDef(target.getDef() + defenseIncrease);
     }
 
     @Override
-    public void removeBuff(characters.Character target) {
-        // Logic to remove defense up buff
+    public void remove(Character target) {
+        target.setDef(target.getDef() - defenseIncrease);
     }
 
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for defense up buff
-    }
+    public void onTurnStart(Character target) {}
 
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for defense up buff
-    }
+    public void onTurnEnd(Character target) {}
 }

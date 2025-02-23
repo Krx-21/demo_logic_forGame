@@ -28,6 +28,8 @@ public abstract class Character {
     private int attack;
     private int speed;
     private List<BaseDotEffect> activeEffects = new ArrayList<>();
+    private boolean isStunned;
+    private boolean isFrozen;
 
     public Character(String name, int hp, int atk, int def, int spd, int accuracy) {
         this.name = name;
@@ -65,7 +67,7 @@ public abstract class Character {
     }
     public int getSpd() { return spd; }
     public int getAccuracy() { return accuracy; }
-    public void setAccuracy(int accuracy) { this.accuracy = accuracy; }
+    public void setAccuracy(int accuracy) { this.accuracy = Math.max(0, Math.min(accuracy, 100)); }
     public List<Skill> getSkills() { return skills; }
     
     // เพิ่ม method setSpd เพื่อให้สามารถปรับ speed ได้จากภายนอก
@@ -90,7 +92,7 @@ public abstract class Character {
     
     // เมธอด heal() และ increaseDef() ตามที่ใช้งานใน Reconstruct
     public void heal(int amount) {
-        this.hp += amount;
+        this.hp = Math.min(hp + amount, maxHp);
         System.out.println(name + " heals for " + amount + " HP.");
     }
     
@@ -129,5 +131,25 @@ public abstract class Character {
     public void removeEffect(BaseDotEffect effect) {
         activeEffects.remove(effect);
         effect.removeEffect(this);
+    }
+
+    public void setStunned(boolean stunned) {
+        this.isStunned = stunned;
+    }
+    
+    public boolean isStunned() {
+        return isStunned;
+    }
+
+    public void setAtk(int atk) {
+        this.atk = atk;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.isFrozen = frozen;
+    }
+
+    public boolean isFrozen() {
+        return isFrozen;
     }
 }

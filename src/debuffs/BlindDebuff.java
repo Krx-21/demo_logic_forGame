@@ -1,28 +1,34 @@
 package debuffs;
 
+import characters.Character;
+
 public class BlindDebuff extends BaseDebuff {
+    private int accuracyReduction;
 
     public BlindDebuff(int duration) {
         super("Blind", duration);
+        this.accuracyReduction = 20; // Reduces accuracy by 20%
     }
 
     @Override
-    public void applyDebuff(characters.Character target) {
-        // Logic to apply blind debuff
+    public void apply(Character target) {
+        target.setAccuracy(target.getAccuracy() - accuracyReduction);
+        System.out.println(target.getName() + " is blinded!");
     }
 
     @Override
-    public void removeDebuff(characters.Character target) {
-        // Logic to remove blind debuff
+    public void remove(Character target) {
+        target.setAccuracy(target.getAccuracy() + accuracyReduction);
+        System.out.println(target.getName() + " is no longer blinded");
     }
 
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for blind debuff
+    public void onTurnStart(Character target) {
+        System.out.println(target.getName() + " has reduced accuracy due to blind");
     }
 
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for blind debuff
+    public void onTurnEnd(Character target) {
+        // No effect on turn end
     }
 }

@@ -1,5 +1,7 @@
 package debuffs;
 
+import characters.Character;
+
 public class FreezeDebuff extends BaseDebuff {
 
     public FreezeDebuff(int duration) {
@@ -7,22 +9,24 @@ public class FreezeDebuff extends BaseDebuff {
     }
 
     @Override
-    public void applyDebuff(characters.Character target) {
-        // Logic to apply freeze debuff
+    public void apply(Character target) {
+        target.setFrozen(true);
+        System.out.println(target.getName() + " is frozen!");
     }
 
     @Override
-    public void removeDebuff(characters.Character target) {
-        // Logic to remove freeze debuff
+    public void remove(Character target) {
+        target.setFrozen(false);
+        System.out.println(target.getName() + " is no longer frozen");
     }
 
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for freeze debuff
+    public void onTurnStart(Character target) {
+        System.out.println(target.getName() + " is frozen and loses their turn!");
     }
 
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for freeze debuff
+    public void onTurnEnd(Character target) {
+        // No effect on turn end
     }
 }

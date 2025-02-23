@@ -1,8 +1,44 @@
 # Song of Twelve Feathers
 
-**Version 0.0.4 (Current)**
+**Version 0.0.4a (Current)**
 
 ## Version History
+
+### v0.0.4a
+**New Features & Improvements:**
+- **Effect System Overhaul**:
+  - Complete refactor of status effect implementation
+  - Added effect duration tracking system
+  - Improved effect application and removal logic
+  - Added visual effect duration indicators
+  - Enhanced effect stacking management
+
+- **Combat System Updates**:
+  - Improved skill effect integration
+  - Enhanced effect processing order
+  - Better turn-based effect handling
+  - Refined damage calculation with effects
+
+- **UI Improvements**:
+  - Added status effect display in battle UI
+  - Enhanced HP/MP ratio display (current/max)
+  - Improved battle status visibility
+  - Better effect duration feedback
+
+**Technical Updates:**
+- Refactored BaseDotEffect system
+- Improved effect manager architecture
+- Enhanced effect inheritance structure
+- Added proper effect cleanup
+- Optimized memory management for effects
+
+**Bug Fixes:**
+- Fixed effect duration not decreasing properly
+- Fixed UI not updating after effect changes
+- Fixed effect stacking issues
+- Fixed effect removal on death/battle end
+- Fixed effect persistence between battles
+- Resolved memory leaks from lingering effects
 
 ### v0.0.4
 **New Features & Improvements:**

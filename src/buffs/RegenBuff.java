@@ -1,28 +1,35 @@
 package buffs;
 
+import characters.Character;
+
 public class RegenBuff extends BaseBuff {
+    private int healAmount;
 
-    public RegenBuff(int duration) {
+    public RegenBuff(int duration, int healAmount) {
         super("Regen", duration);
+        this.healAmount = healAmount;
     }
 
     @Override
-    public void applyBuff(characters.Character target) {
-        // Logic to apply regen buff
+    public void apply(Character target) {
+        // Apply regen buff
+        System.out.println(target.getName() + " gains Regen buff for " + duration + " turns");
     }
 
     @Override
-    public void removeBuff(characters.Character target) {
-        // Logic to remove regen buff
+    public void remove(Character target) {
+        // Remove regen buff
+        System.out.println(target.getName() + "'s Regen buff expires");
     }
 
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for regen buff
+    public void onTurnStart(Character target) {
+        target.heal(healAmount);
+        System.out.println(target.getName() + " regenerates " + healAmount + " HP");
     }
 
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for regen buff
+    public void onTurnEnd(Character target) {
+        // No effect on turn end
     }
 }

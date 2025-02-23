@@ -18,7 +18,7 @@ public class WindSlash extends Skill {
     public void use(Character user, Character target) {
         int damage = Math.max((int)(baseDamage + (user.getAtk() * multiplier) - (target.getDef() * 0.10)), 1);
         target.takeDamage(damage);
-        target.applyEffect(new SlowEffect(2)); // ลด spd ของ target เป็นเวลา 2 เทิร์น
+        target.applyEffect(new SlowEffect(2, 5)); // ลด SPD 5 เป็นเวลา 2 เทิร์น
         System.out.println(user.getName() + " uses " + getName() + " dealing " + damage + " damage.");
     }
 }

@@ -1,28 +1,34 @@
 package debuffs;
 
+import characters.Character;
+
 public class SlowDebuff extends BaseDebuff {
+    private int speedReduction;
 
     public SlowDebuff(int duration) {
         super("Slow", duration);
+        this.speedReduction = 5;
     }
 
     @Override
-    public void applyDebuff(characters.Character target) {
-        // Logic to apply slow debuff
+    public void apply(Character target) {
+        target.setSpd(target.getSpd() - speedReduction);
+        System.out.println(target.getName() + " is slowed!");
     }
 
     @Override
-    public void removeDebuff(characters.Character target) {
-        // Logic to remove slow debuff
+    public void remove(Character target) {
+        target.setSpd(target.getSpd() + speedReduction);
+        System.out.println(target.getName() + " is no longer slowed");
     }
 
     @Override
-    public void onTurnStart(characters.Character target) {
-        // Logic to handle turn start for slow debuff
+    public void onTurnStart(Character target) {
+        System.out.println(target.getName() + " is moving slower");
     }
 
     @Override
-    public void onTurnEnd(characters.Character target) {
-        // Logic to handle turn end for slow debuff
+    public void onTurnEnd(Character target) {
+        // No effect on turn end
     }
 }
