@@ -1,8 +1,46 @@
 # Song of Twelve Feathers
 
-**Version 0.0.3 (Current)**
+**Version 0.0.4 (Current)**
 
 ## Version History
+
+### v0.0.4
+**New Features & Improvements:**
+- **Enhanced Combat System**:
+  - Added status effect display in battle UI
+  - Improved skill cooldown visualization
+  - Streamlined UI for better combat flow
+  - Refined turn-based combat mechanics
+
+- **Enhanced Status Effect System**:
+  - Added visual indicators for active effects
+  - Improved effect duration tracking
+  - Added effect stack management
+  - Enhanced effect application and removal logic
+
+- **UI/UX Improvements**:
+  - Added HP/MP ratio display (current/max)
+  - Improved skill button feedback
+  - Enhanced battle status visibility
+  - Better game completion screen
+  - Improved game summary presentation
+  - Cleaner battle interface layout
+
+- **Battle Flow Improvements**:
+  - Better effect processing order
+  - Enhanced turn transition logic
+  - Improved victory/defeat flow
+  - Added proper game summary before main menu return
+
+**Bug Fixes:**
+- Fixed status effects not showing in battle UI
+- Fixed cooldown system not working properly
+- Fixed multiple back buttons in game summary
+- Fixed effect duration not decreasing correctly
+- Fixed UI elements not updating after effects
+- Fixed battle state inconsistencies
+- Fixed skill button state management
+- Fixed HP/MP display format
 
 ### v0.0.3 (Latest)
 **New Features & Improvements:**

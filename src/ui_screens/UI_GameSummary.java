@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -16,9 +17,13 @@ import game.GameStats;
 public class UI_GameSummary extends VBox {
     private Scene customScene; // เปลี่ยนชื่อตัวแปรจาก scene เป็น customScene
     private Stage stage;
+    private Player player;
+    private GameStats stats;
 
     public UI_GameSummary(Stage stage, Player player, GameStats stats) {
         this.stage = stage;
+        this.player = player;
+        this.stats = stats;
         initialize(player, stats);
     }
 
@@ -99,6 +104,96 @@ public class UI_GameSummary extends VBox {
 
     // เปลี่ยนชื่อเมธอดเพื่อไม่ให้ override getScene()
     public Scene getCustomScene() {
-        return customScene;
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(40));
+        root.setStyle("-fx-background-color: #2c3e50;");
+
+        // หัวข้อ
+        Label titleLabel = new Label("Game Summary");
+        titleLabel.setStyle("""
+            -fx-font-size: 48px;
+            -fx-font-weight: bold;
+            -fx-text-fill: #e74c3c;
+            -fx-font-family: 'Arial';
+            """);
+
+        // สถิติผู้เล่น
+        Label playerStatsLabel = new Label(String.format(
+            "Player Level: %d\nTotal XP: %d",
+            player.getLevel(),
+            player.getCurrentXP()
+        ));
+        playerStatsLabel.setStyle("""
+            -fx-font-size: 24px;
+            -fx-text-fill: #3498db;
+            -fx-font-weight: bold;
+            """);
+
+        // สถิติการต่อสู้
+        Label combatStatsLabel = new Label(String.format(
+            "Monsters Defeated: %d\nBosses Defeated: %d\nDamage Dealt: %d\nDamage Taken: %d\nSkills Used: %d",
+            stats.getMonstersDefeated(),
+            stats.getBossesDefeated(),
+            stats.getTotalDamageDealt(),
+            stats.getTotalDamageTaken(),
+            stats.getSkillsUsed()
+        ));
+        combatStatsLabel.setStyle("""
+            -fx-font-size: 20px;
+            -fx-text-fill: #ecf0f1;
+            """);
+
+        // ปุ่มกลับหน้าหลัก
+        Button backButton = new Button("Back to Main Menu");
+        backButton.setPrefWidth(300);
+        backButton.setPrefHeight(60);
+        backButton.setStyle("""
+            -fx-font-size: 24px;
+            -fx-background-color: #e74c3c;
+            -fx-text-fill: white;
+            -fx-background-radius: 5;
+            -fx-cursor: hand;
+            """);
+
+        backButton.setOnMouseEntered(e -> 
+            backButton.setStyle("""
+                -fx-font-size: 24px;
+                -fx-background-color: #c0392b;
+                -fx-text-fill: white;
+                -fx-background-radius: 5;
+                -fx-cursor: hand;
+                """));
+        
+        backButton.setOnMouseExited(e -> 
+            backButton.setStyle("""
+                -fx-font-size: 24px;
+                -fx-background-color: #e74c3c;
+                -fx-text-fill: white;
+                -fx-background-radius: 5;
+                -fx-cursor: hand;
+                """));
+
+        backButton.setOnAction(e -> {
+            MainMenu mainMenu = new MainMenu(stage);
+            stage.setScene(mainMenu.getCustomScene());
+        });
+
+        // เพิ่ม spacing ระหว่างส่วนต่างๆ
+        Region spacer1 = new Region();
+        spacer1.setPrefHeight(30);
+        Region spacer2 = new Region();
+        spacer2.setPrefHeight(30);
+
+        root.getChildren().addAll(
+            titleLabel,
+            spacer1,
+            playerStatsLabel,
+            combatStatsLabel,
+            spacer2,
+            backButton
+        );
+
+        return new Scene(root, 1280, 720);
     }
 }

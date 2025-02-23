@@ -10,6 +10,9 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
 import java.util.Optional;
+import javafx.scene.control.Label;
+import javafx.scene.paint.Color;
+import effects.BaseDotEffect;
 
 public class Player extends Character {
     private int level;
@@ -19,32 +22,44 @@ public class Player extends Character {
     private int baseAtk;
     private int baseDef;
     private int baseSpd;
+    private int baseMP;      // MP พื้นฐาน
+    private int maxMp;       // MP สูงสุด
+    private int mp;          // MP ปัจจุบัน
     private double hpGrowth;
     private double atkGrowth;
     private double defGrowth;
     private double spdGrowth;
+    private double mpGrowth; // อัตราการเพิ่ม MP ต่อเลเวล
     private List<Feather> feathers;
     private List<Skill> skills;
+    private static final int BASE_MP = 100;
+    private static final double MP_GROWTH = 0.1;
+    private static final int MAX_MP_BONUS = 50; // MP เพิ่มเติมสูงสุด
 
     public Player(String name) {
-        // ปรับค่าสถานะเริ่มต้นให้สูงขึ้น
-        super(name, 500, 70, 45, 80);  // HP:500, ATK:70, DEF:45, SPD:80
+        super(name, 500, 70, 45, 80);
         
+        // Initialize base stats
         level = 1;
         currentXP = 0;
         xpToNextLevel = computeXPThreshold(level);
         
-        // เพิ่มค่าเบสให้สูงขึ้น
-        baseHP = 300;    // เพิ่มจาก 150
-        baseAtk = 45;    // เพิ่มจาก 30
-        baseDef = 30;    // เพิ่มจาก 20
-        baseSpd = 40;    // เพิ่มจาก 25
+        baseHP = 300;
+        baseAtk = 45;
+        baseDef = 30;
+        baseSpd = 40;
+        this.baseMP = BASE_MP;  // Initialize with constant
         
-        // เพิ่มอัตราการเพิ่มค่าสถานะต่อเลเวล
-        hpGrowth = 0.12;    // เพิ่มจาก 0.08
-        atkGrowth = 0.10;   // เพิ่มจาก 0.07
-        defGrowth = 0.08;   // เพิ่มจาก 0.06
-        spdGrowth = 0.10;   // เพิ่มจาก 0.06
+        // Set growth rates
+        hpGrowth = 0.12;
+        atkGrowth = 0.10;
+        defGrowth = 0.08;
+        spdGrowth = 0.10;
+        this.mpGrowth = MP_GROWTH;
+        
+        // Initialize MP
+        this.maxMp = BASE_MP;
+        this.mp = BASE_MP;  // Start with full MP
         
         // คงรายการสกิลเดิม
         this.skills = new ArrayList<>();
@@ -57,7 +72,7 @@ public class Player extends Character {
         
         feathers = new ArrayList<>();
         feathers.add(new FeatherOfBeginning());
-        recalcStats();
+        recalcStats();  // Calculate all stats properly
     }
 
     // Getter สำหรับ skills
@@ -91,9 +106,17 @@ public class Player extends Character {
         return (int) (100 * Math.pow(currentLevel, 1.2));
     }
 
-    private void recalcStats() {
+    @Override
+    protected void recalcStats() {
+        // Calculate base stats first
         maxHp = (int) (baseHP + (baseHP * (level - 1) * hpGrowth));
-        hp = maxHp;  // รีเซ็ต HP ให้เต็มเมื่อเลเวลอัพ
+        hp = maxHp;  // Reset HP to max after recalc
+        
+        // Calculate MP with limit
+        maxMp = Math.min(BASE_MP + (int)(BASE_MP * (level - 1) * mpGrowth), BASE_MP + MAX_MP_BONUS);
+        mp = Math.min(mp, maxMp);  // Limit current MP to new max
+        
+        // Calculate other stats
         atk = (int) (baseAtk + (baseAtk * (level - 1) * atkGrowth));
         def = (int) (baseDef + (baseDef * (level - 1) * defGrowth));
         spd = (int) (baseSpd + (baseSpd * (level - 1) * spdGrowth));
@@ -119,13 +142,38 @@ public class Player extends Character {
         return xpToNextLevel;
     }
 
+    public int getMp() {
+        return mp;
+    }
+
+    public int getMaxMp() {
+        return maxMp;
+    }
+
+    public void setMp(int mp) {
+        this.mp = Math.max(0, Math.min(mp, maxMp));
+    }
+
+    public boolean useMp(int amount) {
+        if (mp >= amount) {
+            mp -= amount;
+            return true;
+        }
+        return false;
+    }
+
+    public void restoreMp(int amount) {
+        int maxPossibleMp = BASE_MP + MAX_MP_BONUS; // MP สูงสุดที่เป็นไปได้
+        mp = Math.min(Math.min(mp + amount, maxMp), maxPossibleMp);
+    }
+
     private void showStatSelectionDialog() {
         ChoiceDialog<String> dialog = new ChoiceDialog<>("HP", "HP", "ATK", "DEF", "SPD");
         dialog.setTitle("Level Up!");
         dialog.setHeaderText("Level " + level + " - Choose a stat to increase");
         dialog.setContentText(
-            String.format("Current Stats:\nHP: %d/%d\nATK: %d\nDEF: %d\nSPD: %d", 
-                hp, maxHp, atk, def, spd)
+            String.format("Current Stats:\nHP: %d/%d\nMP: %d/%d\nATK: %d\nDEF: %d\nSPD: %d", 
+                hp, maxHp, mp, maxMp, atk, def, spd)  // Added MP display
         );
 
         Optional<String> result = dialog.showAndWait();
@@ -161,13 +209,18 @@ public class Player extends Character {
         statsAlert.setTitle("Current Stats");
         statsAlert.setHeaderText("Level " + level + " Stats");
         
-        // แสดงทั้งค่าพื้นฐานและค่าที่เพิ่มขึ้น
         statsAlert.setContentText(
             String.format("HP: %d/%d (Base: %d)\n", hp, maxHp, baseHP) +
+            String.format("MP: %d/%d (Base: %d)\n", mp, maxMp, BASE_MP) +  // Added MP display
             String.format("ATK: %d (Base: %d)\n", atk, baseAtk) +
             String.format("DEF: %d (Base: %d)\n", def, baseDef) +
             String.format("SPD: %d (Base: %d)", spd, baseSpd)
         );
         statsAlert.showAndWait();
+    }
+    
+    @Override
+    public List<BaseDotEffect> getActiveEffects() {
+        return super.getActiveEffects();
     }
 }

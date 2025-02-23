@@ -13,7 +13,7 @@ import debuffs.BaseDebuff;
  * เก็บค่าสถานะ (HP, ATK, DEF, SPD) และเมธอดสำหรับรับ/สร้างความเสียหาย
  */
 
-public class Character {
+public abstract class Character {
     protected String name;
     protected int maxHp;  // เพิ่มตัวแปรเก็บค่า HP สูงสุด
     protected int hp;
@@ -27,6 +27,7 @@ public class Character {
     protected List<BaseDebuff> debuffs;
     private int attack;
     private int speed;
+    private List<BaseDotEffect> activeEffects = new ArrayList<>();
 
     public Character(String name, int hp, int atk, int def, int spd, int accuracy) {
         this.name = name;
@@ -74,7 +75,8 @@ public class Character {
     
     // ใช้ method applyEffect เพียงตัวเดียวสำหรับทุก BaseDotEffect
     public void applyEffect(BaseDotEffect effect) {
-        effect.applyEffect(this);  // เปลี่ยนจาก apply เป็น applyEffect
+        activeEffects.add(effect);
+        effect.applyEffect(this);
     }
     
     public void addBuff(BaseBuff buff) {
@@ -112,5 +114,20 @@ public class Character {
 
     public void setHp(int hp) {
         this.hp = Math.max(0, Math.min(hp, maxHp));  // ป้องกันค่า HP ต่ำกว่า 0 หรือเกิน maxHp
+    }
+    
+    // เพิ่มเมธอด recalcStats
+    protected void recalcStats() {
+        // คำนวณค่าสถานะใหม่หลังจากมีการเปลี่ยนแปลง
+        this.hp = this.maxHp;
+    }
+
+    public List<BaseDotEffect> getActiveEffects() {
+        return activeEffects;
+    }
+    
+    public void removeEffect(BaseDotEffect effect) {
+        activeEffects.remove(effect);
+        effect.removeEffect(this);
     }
 }

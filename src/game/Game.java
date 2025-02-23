@@ -49,6 +49,37 @@ import java.util.Set;
 import java.util.HashSet;
 import ui_screens.UI_GameSummary;
 import game.GameStats;
+import javafx.util.Duration;
+import skills.*;
+import javafx.scene.paint.Color;
+import javafx.scene.control.Label;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Dialog;
+import javafx.util.Duration;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.Tooltip;
+import javafx.util.Duration;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Tooltip;
+import javafx.util.Duration;
+import javafx.scene.layout.Region;
+import javafx.scene.control.DialogPane;  // เพิ่ม import นี้ที่ด้านบนของไฟล์
+
+// หรือถ้าต้องการรวมกับ imports อื่นๆ ที่เกี่ยวกับ controls:
+import javafx.scene.control.*;  // import ทั้งหมดใน package control
+import java.util.Map;
+import java.util.HashMap;
+import effects.BaseDotEffect;
+// ...existing imports...
 
 public class Game {
     // สมมุติว่าเรามี instance ของ Game ที่ใช้ในระบบ turn
@@ -72,10 +103,16 @@ public class Game {
     private Character currentEnemy;
     private DifficultyManager difficultyManager;  // เพิ่มตัวแปร
     private HBox mainButtonBox;
-    private HBox skillButtonBox;
+    private VBox skillButtonBox;
     private Set<Monster> defeatedMonsters;  // เปลี่ยนจาก List เป็น Set
     private boolean isFightingBoss;
     private GameStats gameStats;
+    private Dialog<String> skillDialog; // เปลี่ยนจาก Stage เป็น Dialog
+    private List<Skill> playerSkills; // เพิ่มตัวแปร playerSkills
+    private Label playerMPLabel; // เพิ่มตัวแปรสำหรับ Label MP
+    private Map<String, Integer> skillCooldowns = new HashMap<>(); // เพิ่มตัวแปรใหม่
+    private Label playerStatusLabel; // สำหรับแสดงสถานะของผู้เล่น
+    private Label enemyStatusLabel;  // สำหรับแสดงสถานะของศัตรู
 
     public Game(Stage stage, Difficulty difficulty) {
         this.gameStage = stage;
@@ -96,6 +133,7 @@ public class Game {
         // ใน constructor ของ Game.java
         player = new Player("Adventurer");  // สร้าง Player แทน Character
         this.difficultyManager = new DifficultyManager(difficulty);
+        this.playerSkills = ((Player)player).getSkills(); // เก็บ skills ของ player
         
         initializeThemes();
         initializeMonstersAndBosses();
@@ -142,43 +180,58 @@ public class Game {
 
         // Status labels
         playerHPLabel = new Label("Player HP: " + player.getHp());
+        playerMPLabel = new Label("Player MP: " + ((Player)player).getMp() + "/" + ((Player)player).getMaxMp());
         monsterHPLabel = new Label("Monster HP: ---");
         enemyNameLabel = new Label("Enemy: ---");
 
         // สไตล์ Label
         String labelStyle = "-fx-font-size: 24px; -fx-text-fill: white;";
         playerHPLabel.setStyle(labelStyle);
+        playerMPLabel.setStyle(labelStyle);
         monsterHPLabel.setStyle(labelStyle);
         enemyNameLabel.setStyle(labelStyle + "-fx-font-weight: bold;");
+
+        // สร้าง Labels สำหรับแสดงสถานะ
+        playerStatusLabel = new Label("Status Effects: None");
+        enemyStatusLabel = new Label("Status Effects: None");
+        
+        // สไตล์ของ status labels
+        String statusStyle = """
+            -fx-font-size: 16px;
+            -fx-text-fill: #e74c3c;
+            -fx-font-style: italic;
+            """;
+        playerStatusLabel.setStyle(statusStyle);
+        enemyStatusLabel.setStyle(statusStyle);
 
         // ปุ่มควบคุม
         mainButtonBox = new HBox(20);
         mainButtonBox.setAlignment(Pos.CENTER);
-        Button skillButton = createStyledButton("Use Skill", e -> showSkillButtons());
+        Button skillButton = createStyledButton("Use Skill", e -> showSkillDialog());
         Button itemButton = createStyledButton("Use Item", e -> useItem());
         mainButtonBox.getChildren().addAll(skillButton, itemButton);
 
-        // Skill buttons (initially hidden)
-        skillButtonBox = createSkillButtons();
+        // สร้าง skillButtonBox
+        skillButtonBox = new VBox(10);
+        skillButtonBox.setAlignment(Pos.CENTER);
+        skillButtonBox.setPadding(new Insets(20));
         skillButtonBox.setVisible(false);
         skillButtonBox.setManaged(false);
 
-        // Dev button for testing
-        Button devKillButton = createDevButton("DEV WANT TO KILL YOU!!", e -> devKill());
-
-        // Add all components
         root.getChildren().addAll(
-            playerHPLabel, 
+            playerHPLabel,
+            playerMPLabel,
+            playerStatusLabel,  // เพิ่ม status labels
             monsterHPLabel, 
-            enemyNameLabel, 
+            enemyNameLabel,
+            enemyStatusLabel,   // เพิ่ม status labels
             mainButtonBox,
-            skillButtonBox,
-            devKillButton  // เพิ่มปุ่ม Dev
+            skillButtonBox
         );
 
         fight();
 
-        return new Scene(root, 1280, 720); // ปรับขนาดเป็น 1280x720
+        return new Scene(root, 1280, 720);
     }
 
     private Button createStyledButton(String text, EventHandler<ActionEvent> handler) {
@@ -204,38 +257,76 @@ public class Game {
         return button;
     }
     
-    private HBox createSkillButtons() {
-        HBox skillButtonBox = new HBox(10);
-        skillButtonBox.setAlignment(Pos.CENTER);
-        
-        if (player instanceof Player) {
-            Player playerChar = (Player) player;
-            List<Skill> playerSkills = playerChar.getSkills();
+    private VBox createSkillButtons() {
+        VBox skillButtonsBox = new VBox(10);
+        skillButtonsBox.setPadding(new Insets(20));
+        skillButtonsBox.setAlignment(Pos.CENTER);
+
+        // แสดง MP
+        Label mpLabel = new Label();
+        mpLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+        updateMPLabel(mpLabel);
+
+        for (Skill skill : playerSkills) {
+            Button skillButton = new Button(skill.getName());
+            skillButton.setPrefWidth(300);
+            skillButton.setPrefHeight(50);
+
+            // สร้าง tooltip
+            String tooltipText = String.format("%s\nMP: %d | Cooldown: %d\n%s",
+                skill.getName(),
+                skill.getManaCost(),
+                skill.getCooldown(),
+                skill.getDescription()
+            );
+
+            Tooltip tooltip = new Tooltip(tooltipText);
+            tooltip.setStyle("""
+                -fx-font-size: 14px;
+                -fx-background-color: #2c3e50;
+                -fx-text-fill: white;
+                -fx-padding: 5px;
+                """);
             
-            for (Skill skill : playerSkills) {
-                Button skillButton = createStyledButton(skill.getName(), e -> {
-                    useSkill(skill.getName());
-                    showMainButtons();
-                });
-                
-                // Add tooltip for skill info
-                Tooltip tooltip = new Tooltip(
-                    skill.getDescription() + "\n" +
-                    "Mana Cost: " + skill.getManaCost() + "\n" +
-                    "Cooldown: " + skill.getCooldown() + " turns"
-                );
-                skillButton.setTooltip(tooltip);
-                
-                skillButtonBox.getChildren().add(skillButton);
+            tooltip.setShowDelay(Duration.millis(50));
+            tooltip.setHideDelay(Duration.millis(100));
+            tooltip.setShowDuration(Duration.INDEFINITE);
+            
+            skillButton.setTooltip(tooltip);
+
+            // ปรับสีปุ่มตาม MP
+            if (skill.getManaCost() > ((Player)player).getMp()) {
+                skillButton.setStyle("-fx-background-color: #95a5a6;");
+                skillButton.setDisable(true);
+            } else {
+                skillButton.setStyle("-fx-background-color: #3498db;");
+            }
+
+            // แก้ไขการจัดการ event
+            skillButton.setOnAction(e -> {
+                useSkill(skill.getName());
+                showMainButtons(); // กลับไปแสดงปุ่มหลัก
+            });
+
+            skillButtonsBox.getChildren().add(skillButton);
+        }
+
+        skillButtonsBox.getChildren().add(0, mpLabel);
+        return skillButtonsBox;
+    }
+
+    private void updateMPLabel(Label mpLabel) {
+        if (player instanceof Player) {
+            Player p = (Player) player;
+            mpLabel.setText(String.format("MP: %d/%d", p.getMp(), p.getMaxMp()));
+            
+            // อัพเดทสีตามค่า MP
+            if (p.getMp() < p.getMaxMp() * 0.3) {
+                mpLabel.setTextFill(Color.RED);
+            } else {
+                mpLabel.setTextFill(Color.BLUE);
             }
         }
-        
-        // Back button
-        Button backButton = createStyledButton("Back", e -> showMainButtons());
-        backButton.setStyle(backButton.getStyle() + "-fx-background-color: #c0392b;");
-        skillButtonBox.getChildren().add(backButton);
-        
-        return skillButtonBox;
     }
 
     private void showSkillButtons() {
@@ -380,122 +471,106 @@ public class Game {
             Skill chosenSkill = enemySkills.get(index);
             
             System.out.println(currentEnemy.getName() + " uses " + chosenSkill.getName() + "!");
+            int hpBefore = player.getHp();
             chosenSkill.use(currentEnemy, player);
+            int hpAfter = player.getHp();
+            int damageTaken = hpBefore - hpAfter;
+            gameStats.addDamageTaken(damageTaken);  // เพิ่มค่าความเสียหายที่ได้รับ
             
             playerHPLabel.setText("Player HP: " + player.getHp());
         } else {
             if (doesAttackHit(currentEnemy, player)) {
                 int damage = Math.max(currentEnemy.getAtk() - player.getDef(), 1);
                 player.takeDamage(damage);
-                gameStats.addDamageTaken(damage);
+                gameStats.addDamageTaken(damage);  // เพิ่มค่าความเสียหายที่ได้รับ
                 System.out.println(currentEnemy.getName() + " attacks Player causing " + damage + " damage.");
                 playerHPLabel.setText("Player HP: " + player.getHp());
-            } else {
-                System.out.println(currentEnemy.getName() + "'s attack missed the Player!");
             }
         }
 
         if (player.getHp() <= 0) {
-            Alert gameOverAlert = new Alert(Alert.AlertType.INFORMATION);
-            gameOverAlert.setTitle("Game Over");
-            gameOverAlert.setHeaderText("You have been defeated!");
-            gameOverAlert.setContentText("Better luck next time!");
-            
-            gameOverAlert.showAndWait().ifPresent(response -> {
-                // กลับไปยังหน้าเมนูหลัก
-                MainMenu mainMenu = new MainMenu(gameStage);
-                gameStage.setScene(mainMenu.getCustomScene());
-            });
+            showDefeatAlert();
         } else {
+            // ควรเพิ่มการตรวจสอบและอัพเดตเอฟเฟคที่นี่
+            if (player instanceof Player) {
+                Player p = (Player) player;
+                // ติ๊กเอฟเฟคของผู้เล่น
+                for (BaseDotEffect effect : p.getActiveEffects()) {
+                    effect.tickEffect(p);
+                }
+                // ลบเอฟเฟคที่หมดอายุ
+                p.getActiveEffects().removeIf(effect -> effect.getDuration() <= 0);
+                
+                // ฟื้นฟู MP และลด cooldown
+                p.restoreMp(10);
+                reduceCooldowns();
+            }
+            
+            // ติ๊กเอฟเฟคของศัตรู
+            for (BaseDotEffect effect : currentEnemy.getActiveEffects()) {
+                effect.tickEffect(currentEnemy);
+            }
+            // ลบเอฟเฟคที่หมดอายุ
+            currentEnemy.getActiveEffects().removeIf(effect -> effect.getDuration() <= 0);
+            
+            updateUI();
             System.out.println("Enemy turn complete. Now player's turn.");
         }
     }
     
     private void showSkillDialog() {
-        Stage skillStage = new Stage();
-        skillStage.initModality(Modality.APPLICATION_MODAL);
-        skillStage.setTitle("Choose Skill");
+        mainButtonBox.setVisible(false);
+        mainButtonBox.setManaged(false);
 
-        // ตั้งค่าขนาดหน้าต่างสกิล
-        skillStage.setWidth(800);
-        skillStage.setHeight(600);
-        skillStage.setResizable(false);
+        // เคลียร์ปุ่มเก่าและสร้างใหม่
+        skillButtonBox.getChildren().clear();
 
-        VBox layout = new VBox(10);
-        layout.setPadding(new Insets(20));
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #2c3e50;");
+        // แสดง MP
+        Label mpLabel = new Label();
+        mpLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+        updateMPLabel(mpLabel);
+        skillButtonBox.getChildren().add(mpLabel);
 
-        // สร้างปุ่มสกิลทั้ง 6 สกิล
-        if (player instanceof Player) {
-            Player playerChar = (Player) player;
-            List<Skill> playerSkills = playerChar.getSkills();
-            
-            for (Skill skill : playerSkills) {
-                Button skillButton = new Button(skill.getName());
-                skillButton.setPrefWidth(300);
-                skillButton.setPrefHeight(50);
-                
-                // สร้าง tooltip แสดงรายละเอียดสกิล
-                Tooltip tooltip = new Tooltip(
-                    skill.getDescription() + "\n" +
-                    "Mana Cost: " + skill.getManaCost() + "\n" +
-                    "Cooldown: " + skill.getCooldown() + " turns"
-                );
-                skillButton.setTooltip(tooltip);
-                
-                // สไตล์ปุ่มสกิล
-                skillButton.setStyle(
-                    "-fx-font-size: 16px; " +
-                    "-fx-background-color: #34495e; " +
-                    "-fx-text-fill: white; " +
-                    "-fx-padding: 10px; " +
-                    "-fx-border-color: #455a64; " +
-                    "-fx-border-width: 2px;"
-                );
-                
-                // เมื่อเมาส์ชี้
-                skillButton.setOnMouseEntered(e -> 
-                    skillButton.setStyle(skillButton.getStyle() + "-fx-background-color: #455a64;"));
-                
-                // เมื่อเมาส์ออก
-                skillButton.setOnMouseExited(e -> 
-                    skillButton.setStyle(skillButton.getStyle() + "-fx-background-color: #34495e;"));
-                
-                skillButton.setOnAction(e -> {
-                    useSkill(skill.getName());
-                    skillStage.close();
-                });
-                
-                layout.getChildren().add(skillButton);
-            }
+        // สร้างปุ่มสกิล
+        for (Skill skill : playerSkills) {
+            Button skillButton = createSkillButton(skill);
+            skillButtonBox.getChildren().add(skillButton);
         }
 
-        // ปุ่มย้อนกลับ
+        // เพิ่ม spacer
+        Region spacer = new Region();
+        spacer.setPrefHeight(20);
+        
+        // สร้างปุ่ม Back
         Button backButton = new Button("Back");
         backButton.setPrefWidth(300);
         backButton.setPrefHeight(50);
-        backButton.setStyle(
-            "-fx-font-size: 16px; " +
-            "-fx-background-color: #c0392b; " +
-            "-fx-text-fill: white; " +
-            "-fx-padding: 10px; " +
-            "-fx-border-color: #922b21; " +
-            "-fx-border-width: 2px;"
-        );
+        backButton.setStyle("""
+            -fx-background-color: #e74c3c;
+            -fx-text-fill: white;
+            -fx-font-size: 16px;
+            -fx-background-radius: 5;
+            """);
         
-        backButton.setOnMouseEntered(e -> 
-            backButton.setStyle(backButton.getStyle() + "-fx-background-color: #922b21;"));
+        backButton.setOnMouseEntered(e -> backButton.setStyle("""
+            -fx-background-color: #c0392b;
+            -fx-text-fill: white;
+            -fx-font-size: 16px;
+            -fx-background-radius: 5;
+            """));
         
-        backButton.setOnMouseExited(e -> 
-            backButton.setStyle(backButton.getStyle() + "-fx-background-color: #c0392b;"));
+        backButton.setOnMouseExited(e -> backButton.setStyle("""
+            -fx-background-color: #e74c3c;
+            -fx-text-fill: white;
+            -fx-font-size: 16px;
+            -fx-background-radius: 5;
+            """));
         
-        backButton.setOnAction(e -> skillStage.close());
-        layout.getChildren().add(backButton);
+        backButton.setOnAction(e -> showMainButtons());
 
-        Scene scene = new Scene(layout);
-        skillStage.setScene(scene);
-        skillStage.showAndWait();
+        skillButtonBox.getChildren().addAll(spacer, backButton);
+        skillButtonBox.setVisible(true);
+        skillButtonBox.setManaged(true);
     }
     
     private void useSkill(String skillName) {
@@ -508,20 +583,37 @@ public class Game {
                 .findFirst()
                 .orElse(null);
                 
-            if (selectedSkill != null) {
+            // เช็ค cooldown ก่อนใช้สกิล
+            if (selectedSkill != null && playerChar.getMp() >= selectedSkill.getManaCost()) {
+                if (skillCooldowns.getOrDefault(skillName, 0) > 0) {
+                    System.out.println("Skill is on cooldown: " + skillCooldowns.get(skillName) + " turns remaining!");
+                    return;
+                }
+
                 System.out.println("Using skill: " + selectedSkill.getName());
+                
+                // หัก MP และตั้งค่า cooldown
+                playerChar.useMp(selectedSkill.getManaCost());
+                skillCooldowns.put(skillName, selectedSkill.getCooldown());
                 
                 int enemyHpBefore = currentEnemy.getHp();
                 selectedSkill.use(player, currentEnemy);
                 int enemyHpAfter = currentEnemy.getHp();
                 
-                // อัพเดตค่า monsterHP จาก HP ปัจจุบันของมอนสเตอร์
+                // อัพเดตทั้ง HP และ MP
                 monsterHP = enemyHpAfter;
                 monsterHPLabel.setText("Monster HP: " + monsterHP);
+                playerMPLabel.setText("Player MP: " + playerChar.getMp() + "/" + playerChar.getMaxMp());
 
                 int damage = enemyHpBefore - enemyHpAfter;
                 gameStats.addDamageDealt(damage);
                 gameStats.incrementSkillsUsed();
+
+                // ฟื้นฟู MP หลังจบเทิร์น
+                playerChar.restoreMp(10);  // เปลี่ยนจาก 20 เป็น 10
+                
+                // อัพเดต UI
+                updateUI();
 
                 if (monsterHP <= 0) {
                     System.out.println("Enemy defeated!");
@@ -530,9 +622,16 @@ public class Game {
                     }
                     fight();
                 } else {
-                    System.out.println("Player turn complete. Now enemy's turn.");
+                    // ให้เอฟเฟคทำงานก่อนจบเทิร์น
+                    for (BaseDotEffect effect : currentEnemy.getActiveEffects()) {
+                        effect.tickEffect(currentEnemy);
+                    }
+                    currentEnemy.getActiveEffects().removeIf(effect -> effect.getDuration() <= 0);
+                    
                     enemyAttack();
                 }
+            } else {
+                System.out.println("Not enough MP to use skill!");
             }
         }
     }
@@ -593,41 +692,31 @@ public class Game {
         int bonusXP = isFightingBoss ? baseXP * 2 : 0;
         int totalXP = baseXP + bonusXP;
 
-        // แสดง Alert และจัดการสถานะ
         Alert victoryAlert = new Alert(Alert.AlertType.INFORMATION);
         victoryAlert.setTitle("Victory!");
-        
+
         if (isFightingBoss) {
-            // จัดการสถานะบอส
             bossList.remove(0);
             victoryAlert.setHeaderText("Boss Defeated: " + defeatedEnemy.getName());
             victoryAlert.setContentText(String.format(
                 "Congratulations!\nBase XP: %d\nBoss Bonus: %d\nTotal XP gained: %d",
                 baseXP, bonusXP, totalXP
             ));
-            System.out.println("Boss defeated! Gained " + totalXP + " XP (Base: " + baseXP + ", Bonus: " + bonusXP + ")");
             gameStats.incrementBossesDefeated();
         } else {
-            // จัดการสถานะมอนสเตอร์ธรรมดา
             defeatedMonsters.add(defeatedEnemy);
             victoryAlert.setHeaderText("Defeated: " + defeatedEnemy.getName());
             victoryAlert.setContentText(String.format("Experience gained: %d", totalXP));
-            System.out.println("Monster defeated! Gained " + totalXP + " XP");
             gameStats.incrementMonstersDefeated();
         }
 
         victoryAlert.showAndWait();
 
-        // ให้ XP กับผู้เล่น
+        // ให้ XP กับผู้เล่นและเพิ่มในสถิติ
         if (player instanceof Player) {
             ((Player) player).addXP(totalXP);
-        }
-
-        gameStats.addXP(totalXP);
-
-        // รีเซ็ตสถานะบอส
-        if (isFightingBoss) {
-            isFightingBoss = false;
+            gameStats.addXP(totalXP);  // เพิ่ม XP ลงในสถิติ
+            System.out.println("Player gained " + totalXP + " XP");
         }
 
         fight();
@@ -661,8 +750,9 @@ public class Game {
         defeatAlert.setHeaderText("You have been defeated!");
         defeatAlert.setContentText("Better luck next time!");
         defeatAlert.showAndWait().ifPresent(response -> {
-            MainMenu mainMenu = new MainMenu(gameStage);
-            gameStage.setScene(mainMenu.getCustomScene());
+            // แสดงหน้าสรุปเกมที่มีปุ่ม Back to Main Menu อยู่แล้ว
+            UI_GameSummary summary = new UI_GameSummary(gameStage, (Player)player, gameStats);
+            gameStage.setScene(summary.getCustomScene());
         });
     }
     
@@ -821,14 +911,121 @@ public class Game {
     private void updateUI() {
         // อัพเดต UI แสดงสถานะการต่อสู้
         enemyNameLabel.setText("Enemy: " + currentEnemy.getName());
-        monsterHPLabel.setText("Monster HP: " + monsterHP);
-        playerHPLabel.setText("Player HP: " + player.getHp());
+        monsterHPLabel.setText(String.format("Monster HP: %d/%d", monsterHP, currentEnemy.getMaxHp()));
+        playerHPLabel.setText(String.format("Player HP: %d/%d", player.getHp(), player.getMaxHp()));
         
+        if (player instanceof Player) {
+            Player p = (Player) player;
+            playerMPLabel.setText(String.format("Player MP: %d/%d", p.getMp(), p.getMaxMp()));
+            
+            // อัพเดตสถานะของผู้เล่น
+            List<String> playerEffects = p.getActiveEffects().stream()
+                .map(effect -> String.format("%s (%d turns)", 
+                    effect.getName(), 
+                    effect.getDuration()))
+                .collect(Collectors.toList());
+            
+            if (playerEffects.isEmpty()) {
+                playerStatusLabel.setText("Status Effects: None");
+                playerStatusLabel.setStyle("-fx-text-fill: #95a5a6;"); // สีเทาถ้าไม่มีสถานะ
+            } else {
+                playerStatusLabel.setText("Status Effects: " + String.join(", ", playerEffects));
+                playerStatusLabel.setStyle("-fx-text-fill: #e74c3c;"); // สีแดงถ้ามีสถานะ
+            }
+        }
+        
+        // อัพเดตสถานะของศัตรู
+        List<String> enemyEffects = currentEnemy.getActiveEffects().stream()
+            .map(effect -> String.format("%s (%d turns)", 
+                effect.getName(), 
+                effect.getDuration()))
+            .collect(Collectors.toList());
+        
+        if (enemyEffects.isEmpty()) {
+            enemyStatusLabel.setText("Status Effects: None");
+            enemyStatusLabel.setStyle("-fx-text-fill: #95a5a6;"); // สีเทาถ้าไม่มีสถานะ
+        } else {
+            enemyStatusLabel.setText("Status Effects: " + String.join(", ", enemyEffects));
+            enemyStatusLabel.setStyle("-fx-text-fill: #e74c3c;"); // สีแดงถ้ามีสถานะ
+        }
+
         // แสดงข้อความว่ากำลังสู้กับใคร
         if (isFightingBoss) {
             System.out.println("Fighting boss: " + currentEnemy.getName());
         } else {
             System.out.println("Fighting monster: " + currentEnemy.getName());
         }
+    }
+
+    private Button createSkillButton(Skill skill) {
+        Button skillButton = new Button(skill.getName());
+        skillButton.setPrefWidth(300);
+        skillButton.setPrefHeight(50);
+
+        // สร้าง tooltip
+        String tooltipText = String.format("%s\nMP: %d | Cooldown: %d\n%s",
+            skill.getName(),
+            skill.getManaCost(),
+            skill.getCooldown(),
+            skill.getDescription()
+        );
+
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setStyle("""
+            -fx-font-size: 14px;
+            -fx-background-color: #2c3e50;
+            -fx-text-fill: white;
+            -fx-padding: 5px;
+            """);
+        
+        tooltip.setShowDelay(Duration.millis(50));
+        tooltip.setHideDelay(Duration.millis(100));
+        tooltip.setShowDuration(Duration.INDEFINITE);
+        
+        skillButton.setTooltip(tooltip);
+
+        // ปรับสีปุ่มตาม MP และ Cooldown
+        int currentCooldown = skillCooldowns.getOrDefault(skill.getName(), 0);
+        if (currentCooldown > 0) {
+            skillButton.setStyle("""
+                -fx-background-color: #7f8c8d;
+                -fx-text-fill: white;
+                -fx-font-size: 16px;
+                """);
+            skillButton.setDisable(true);
+            skillButton.setText(String.format("%s (CD: %d)", skill.getName(), currentCooldown));
+        } else if (skill.getManaCost() > ((Player)player).getMp()) {
+            skillButton.setStyle("""
+                -fx-background-color: #95a5a6;
+                -fx-text-fill: white;
+                -fx-font-size: 16px;
+                """);
+            skillButton.setDisable(true);
+        } else {
+            skillButton.setStyle("""
+                -fx-background-color: #3498db;
+                -fx-text-fill: white;
+                -fx-font-size: 16px;
+                """);
+        }
+
+        skillButton.setOnAction(e -> {
+            useSkill(skill.getName());
+            showMainButtons();
+        });
+
+        return skillButton;
+    }
+
+    // เพิ่มเมธอดลด cooldown ทุกเทิร์น
+    private void reduceCooldowns() {
+        Map<String, Integer> updatedCooldowns = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : skillCooldowns.entrySet()) {
+            int remainingCooldown = entry.getValue() - 1;
+            if (remainingCooldown > 0) {
+                updatedCooldowns.put(entry.getKey(), remainingCooldown);
+            }
+        }
+        skillCooldowns = updatedCooldowns;
     }
 }
